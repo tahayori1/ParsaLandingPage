@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Course, UserInfo, Language } from './types';
 import { updateSEOMetadataForCourse } from './utils/helpers';
-import { fetchAllCourses, fetchAllLanguages, submitConsultationRequest, submitUserInfo, saveCoursesToLocal, loginAdmin } from './utils/api';
+import * as api from './utils/api';
 import UrgencyBanner from './components/UrgencyBanner';
 
 import Header from './components/Header';
@@ -21,6 +22,7 @@ const Chatbot = lazy(() => import('./components/Chatbot'));
 const AdminLogin = lazy(() => import('./components/AdminLogin'));
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
 const CourseFormModal = lazy(() => import('./components/CourseFormModal'));
+const LanguageFormModal = lazy(() => import('./components/LanguageFormModal'));
 
 const STATIC_PHONE_NUMBERS = ['09173162644', '09013443574', '071-32331829', '071-32357641'];
 const WHATSAPP_NUMBER = '09173162644';
@@ -41,6 +43,8 @@ const MainApp: React.FC = () => {
     const [isAdmin, setIsAdmin] = useState(() => !!sessionStorage.getItem('adminAuthToken'));
     const [isCourseFormModalOpen, setIsCourseFormModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
+    const [isLanguageFormModalOpen, setIsLanguageFormModalOpen] = useState(false);
+    const [editingLanguage, setEditingLanguage] = useState<Language | null>(null);
 
 
     const [userInfo, setUserInfo] = useState<UserInfo | null>(() => {
@@ -55,7 +59,7 @@ const MainApp: React.FC = () => {
     });
     
     const onUpdateUserInfo = useCallback(async (info: UserInfo) => {
-        await submitUserInfo(info);
+        await api.submitUserInfo(info);
         localStorage.setItem('userInfo', JSON.stringify(info));
         setUserInfo(info);
     }, []);
@@ -63,8 +67,13 @@ const MainApp: React.FC = () => {
     const loadData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const fetchedCourses = await fetchAllCourses();
-            const fetchedLanguages = await fetchAllLanguages(fetchedCourses);
+            const fetchedCourses = await api.fetchAllCourses();
+            const baseLanguages = await api.fetchAllLanguages();
+            
+            const fetchedLanguages = baseLanguages.map(lang => ({
+                ...lang,
+                courseCount: fetchedCourses.filter(c => c.language === lang.name).length
+            }));
             
             setLanguages(fetchedLanguages);
             setAllCourses(fetchedCourses);
@@ -76,37 +85,25 @@ const MainApp: React.FC = () => {
         }
     }, []);
 
-    // Effect for handling routing and view changes
     useEffect(() => {
         const handleRouteChange = () => {
             const currentHash = window.location.hash || '#/';
-            
-            // Key fix: If we are going to the admin page (or are on it),
-            // ensure all user-facing modals are closed BEFORE setting the view.
             if (currentHash.startsWith('#/admin')) {
                 setSelectedCourse(null);
                 setIsConsultationModalOpen(false);
                 setIsProfileModalOpen(false);
                 setIsUserInfoModalOpen(false);
             }
-            
             setView(currentHash);
         };
-
-        // Run on initial mount to set the correct view and clean up modals if needed
         handleRouteChange();
-        
-        // Add listener for subsequent hash changes
         window.addEventListener('hashchange', handleRouteChange);
-        
-        // Cleanup listener on component unmount
         return () => window.removeEventListener('hashchange', handleRouteChange);
     }, []);
 
 
     useEffect(() => {
         if (allCourses.length === 0) return;
-
         const handleHistoryChange = () => {
             const hash = window.location.hash;
             if (hash.startsWith('#/course/')) {
@@ -116,11 +113,10 @@ const MainApp: React.FC = () => {
                     setSelectedCourse(course);
                     updateSEOMetadataForCourse(course);
                 }
-            } else if (!hash.startsWith('#/admin')) { // Don't clear selection when going to admin
+            } else if (!hash.startsWith('#/admin')) {
                  setSelectedCourse(null);
             }
         };
-
         handleHistoryChange();
         window.addEventListener('popstate', handleHistoryChange);
         return () => window.removeEventListener('popstate', handleHistoryChange);
@@ -129,7 +125,7 @@ const MainApp: React.FC = () => {
     // Admin Handlers
     const handleAdminLogin = async (username: string, password: string): Promise<boolean | string> => {
         try {
-            const { token } = await loginAdmin(username, password);
+            const { token } = await api.loginAdmin(username, password);
             if (token) {
                 sessionStorage.setItem('adminAuthToken', token);
                 setIsAdmin(true);
@@ -148,26 +144,32 @@ const MainApp: React.FC = () => {
         window.location.hash = '#/';
     };
     
-    const handleSaveCourse = (courseToSave: Course) => {
-        let updatedCourses;
-        if (courseToSave.id) { // Editing existing course
-            updatedCourses = allCourses.map(c => c.id === courseToSave.id ? courseToSave : c);
-        } else { // Adding new course
-            const newId = Math.max(...allCourses.map(c => c.id || 0)) + 1;
-            const newCourse = { ...courseToSave, id: newId, slug: `${courseToSave.language}-${courseToSave.level}-${newId}`.replace(/\s/g, '-') };
-            updatedCourses = [...allCourses, newCourse];
+    // Course Handlers
+    const handleSaveCourse = async (courseToSave: Course) => {
+        try {
+            if (courseToSave.id) {
+                await api.updateCourse(courseToSave);
+            } else {
+                await api.addCourse(courseToSave);
+            }
+            setIsCourseFormModalOpen(false);
+            setEditingCourse(null);
+            await loadData();
+        } catch (error) {
+            console.error("Failed to save course:", error);
+            alert("خطا در ذخیره سازی دوره. لطفا دوباره تلاش کنید.");
         }
-        setAllCourses(updatedCourses);
-        saveCoursesToLocal(updatedCourses);
-        setIsCourseFormModalOpen(false);
-        setEditingCourse(null);
     };
 
-    const handleDeleteCourse = (courseId: number) => {
+    const handleDeleteCourse = async (courseId: number) => {
         if (window.confirm('آیا از حذف این دوره اطمینان دارید؟')) {
-            const updatedCourses = allCourses.filter(c => c.id !== courseId);
-            setAllCourses(updatedCourses);
-            saveCoursesToLocal(updatedCourses);
+            try {
+                await api.deleteCourse(courseId);
+                await loadData();
+            } catch (error) {
+                 console.error("Failed to delete course:", error);
+                 alert("خطا در حذف دوره.");
+            }
         }
     };
     
@@ -179,6 +181,45 @@ const MainApp: React.FC = () => {
     const handleAddNewCourse = () => {
         setEditingCourse(null);
         setIsCourseFormModalOpen(true);
+    };
+
+    // Language Handlers
+    const handleSaveLanguage = async (langToSave: Language) => {
+         try {
+            if (langToSave.id) {
+                await api.updateLanguage(langToSave);
+            } else {
+                await api.addLanguage(langToSave);
+            }
+            setIsLanguageFormModalOpen(false);
+            setEditingLanguage(null);
+            await loadData();
+        } catch (error) {
+            console.error("Failed to save language:", error);
+            alert("خطا در ذخیره سازی زبان. لطفا دوباره تلاش کنید.");
+        }
+    };
+
+    const handleDeleteLanguage = async (langId: number) => {
+        if (window.confirm('آیا از حذف این زبان اطمینان دارید؟ حذف زبان ممکن است باعث ایجاد مشکل در دوره‌های مرتبط شود.')) {
+            try {
+                await api.deleteLanguage(langId);
+                await loadData();
+            } catch (error) {
+                 console.error("Failed to delete language:", error);
+                 alert("خطا در حذف زبان.");
+            }
+        }
+    };
+
+    const handleEditLanguage = (lang: Language) => {
+        setEditingLanguage(lang);
+        setIsLanguageFormModalOpen(true);
+    };
+
+    const handleAddNewLanguage = () => {
+        setEditingLanguage(null);
+        setIsLanguageFormModalOpen(true);
     };
 
 
@@ -210,23 +251,15 @@ const MainApp: React.FC = () => {
 
     const handleUserInfoSubmitAndConsult = useCallback(async (info: UserInfo) => {
         if (!selectedCourse) throw new Error("No course selected for consultation");
-        
-        const fullUserInfo: UserInfo = {
-            ...(userInfo || {}),
-            ...info,
-            courseOfInterest: selectedCourse.language
-        };
-        
+        const fullUserInfo: UserInfo = { ...(userInfo || {}), ...info, courseOfInterest: selectedCourse.language };
         localStorage.setItem('userInfo', JSON.stringify(fullUserInfo));
         setUserInfo(fullUserInfo);
-        
-        await submitConsultationRequest({ userInfo: fullUserInfo, course: selectedCourse });
+        await api.submitConsultationRequest({ userInfo: fullUserInfo, course: selectedCourse });
     }, [selectedCourse, userInfo]);
 
     const handleOpenProfileModal = useCallback(() => {
-        if (userInfo) {
-            setIsProfileModalOpen(true);
-        } else {
+        if (userInfo) setIsProfileModalOpen(true);
+        else {
             setPostUserInfoAction('profile');
             setIsUserInfoModalOpen(true);
         }
@@ -242,11 +275,8 @@ const MainApp: React.FC = () => {
     }, [onUpdateUserInfo]);
 
     const courseCount = useMemo(() => allCourses.length, [allCourses]);
-    const languageCount = useMemo(() => languages.length, [languages]);
 
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
+    useEffect(() => { loadData(); }, [loadData]);
 
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen bg-parsa-light-bg"><div className="text-xl font-semibold text-parsa-gray-600">درحال بارگذاری اطلاعات...</div></div>;
@@ -258,66 +288,22 @@ const MainApp: React.FC = () => {
             <Header courseCount={courseCount} onOpenProfile={handleOpenProfileModal} />
             <main>
                 <Hero />
-                <QuickStats languageCount={languageCount} courseCount={courseCount} />
-                <CourseCatalog 
-                    languages={languages}
-                    allCourses={allCourses}
-                    onSelectCourse={handleSelectCourse}
-                    onRequestConsultation={handleRequestConsultation}
-                />
+                <QuickStats languageCount={languages.length} courseCount={courseCount} />
+                <CourseCatalog languages={languages} allCourses={allCourses} onSelectCourse={handleSelectCourse} onRequestConsultation={handleRequestConsultation} />
                  <Suspense fallback={<div className="text-center p-12 font-semibold">درحال بارگذاری...</div>}>
                     <Testimonials />
                     <Benefits />
                     <CTA whatsappNumber={WHATSAPP_NUMBER} />
                 </Suspense>
             </main>
+            <Suspense fallback={null}><Footer phoneNumbers={STATIC_PHONE_NUMBERS} /></Suspense>
             <Suspense fallback={null}>
-                <Footer phoneNumbers={STATIC_PHONE_NUMBERS} />
+                {selectedCourse && <ClassDetailsModal course={selectedCourse} onClose={handleCloseCourseModal} onOpenConsultation={() => handleRequestConsultation(selectedCourse)} />}
+                {isConsultationModalOpen && selectedCourse && <ConsultationModal course={selectedCourse} userInfo={userInfo} onClose={handleCloseConsultation} onUpdateAndConfirm={handleUserInfoSubmitAndConsult} />}
+                {isProfileModalOpen && userInfo && <UserProfileModal currentUserInfo={userInfo} onClose={handleCloseProfileModal} onUpdate={onUpdateUserInfo} />}
+                {isUserInfoModalOpen && <UserInfoModal onSubmit={handleSubmitUserInfoForProfile} onClose={() => { setIsUserInfoModalOpen(false); setPostUserInfoAction(null); }} title="اطلاعات شما" description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." submitText="ثبت و ادامه" />}
             </Suspense>
-
-            <Suspense fallback={null}>
-                {selectedCourse && (
-                    <ClassDetailsModal 
-                        course={selectedCourse} 
-                        onClose={handleCloseCourseModal}
-                        onOpenConsultation={() => handleRequestConsultation(selectedCourse)}
-                    />
-                )}
-                {isConsultationModalOpen && selectedCourse && (
-                     <ConsultationModal 
-                        course={selectedCourse}
-                        userInfo={userInfo}
-                        onClose={handleCloseConsultation}
-                        onUpdateAndConfirm={handleUserInfoSubmitAndConsult}
-                     />
-                )}
-                {isProfileModalOpen && userInfo && (
-                    <UserProfileModal 
-                        currentUserInfo={userInfo}
-                        onClose={handleCloseProfileModal}
-                        onUpdate={onUpdateUserInfo}
-                    />
-                )}
-                {isUserInfoModalOpen && (
-                     <UserInfoModal
-                        onSubmit={handleSubmitUserInfoForProfile}
-                        onClose={() => {
-                            setIsUserInfoModalOpen(false);
-                            setPostUserInfoAction(null);
-                        }}
-                        title="اطلاعات شما"
-                        description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید."
-                        submitText="ثبت و ادامه"
-                    />
-                )}
-            </Suspense>
-
-            <Suspense fallback={null}>
-                  <Chatbot
-                      userInfo={userInfo}
-                      onUpdateUserInfo={onUpdateUserInfo}
-                  />
-            </Suspense>
+            <Suspense fallback={null}><Chatbot userInfo={userInfo} onUpdateUserInfo={onUpdateUserInfo} /></Suspense>
         </>
     );
 
@@ -329,17 +315,20 @@ const MainApp: React.FC = () => {
                 <>
                     <AdminPanel 
                         courses={allCourses}
-                        onAdd={handleAddNewCourse}
-                        onEdit={handleEditCourse}
-                        onDelete={handleDeleteCourse}
+                        languages={languages}
+                        onAddCourse={handleAddNewCourse}
+                        onEditCourse={handleEditCourse}
+                        onDeleteCourse={handleDeleteCourse}
+                        onAddLanguage={handleAddNewLanguage}
+                        onEditLanguage={handleEditLanguage}
+                        onDeleteLanguage={handleDeleteLanguage}
                         onLogout={handleAdminLogout}
                     />
                     {isCourseFormModalOpen && (
-                        <CourseFormModal
-                            initialData={editingCourse}
-                            onSave={handleSaveCourse}
-                            onClose={() => setIsCourseFormModalOpen(false)}
-                        />
+                        <CourseFormModal initialData={editingCourse} onSave={handleSaveCourse} onClose={() => setIsCourseFormModalOpen(false)} />
+                    )}
+                    {isLanguageFormModalOpen && (
+                        <LanguageFormModal initialData={editingLanguage} onSave={handleSaveLanguage} onClose={() => setIsLanguageFormModalOpen(false)} />
                     )}
                 </>
             )}

@@ -1,7 +1,7 @@
+
 import type { Language, Course, UserInfo } from '../types';
 
 const API_BASE_URL = 'https://api.parsa-li.com/webhook/d941ca98-b8fc-4a10-aba8-a6e17706f3ca';
-const COURSES_STORAGE_KEY = 'parsa-courses';
 
 // --- Hashing Utility ---
 async function hashPassword(password: string): Promise<string> {
@@ -13,6 +13,7 @@ async function hashPassword(password: string): Promise<string> {
     return hashHex;
 }
 
+const getToken = () => sessionStorage.getItem('adminAuthToken');
 
 // --- Admin Authentication ---
 export async function loginAdmin(username: string, password: string): Promise<{ token: string }> {
@@ -23,11 +24,11 @@ export async function loginAdmin(username: string, password: string): Promise<{ 
         body: JSON.stringify({ username, password: hashedPassword }),
     });
 
+    const data = await response.json();
     if (!response.ok) {
-        throw new Error('Login failed. Please check your credentials.');
+        throw new Error(data.message || 'Login failed. Please check your credentials.');
     }
     
-    const data = await response.json();
     if (!data.token) {
         throw new Error('Login response did not include a token.');
     }
@@ -35,84 +36,83 @@ export async function loginAdmin(username: string, password: string): Promise<{ 
     return data;
 }
 
-
-// --- Local Storage Functions for Admin ---
-
-export function loadCoursesFromLocal(): Course[] | null {
-    try {
-        const localData = localStorage.getItem(COURSES_STORAGE_KEY);
-        if (localData) {
-            return JSON.parse(localData);
-        }
-        return null;
-    } catch (error) {
-        console.error("Failed to load courses from local storage", error);
-        return null;
-    }
-}
-
-export function saveCoursesToLocal(courses: Course[]): void {
-    try {
-        localStorage.setItem(COURSES_STORAGE_KEY, JSON.stringify(courses));
-    } catch (error) {
-        console.error("Failed to save courses to local storage", error);
-    }
-}
-
 // --- Data Fetching Functions ---
-
-async function fetchCoursesFromServer(): Promise<Course[]> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/courses`);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch courses: ${response.statusText}`);
-        }
-        const coursesData: Course[] = await response.json();
-        
-        // Add a unique slug to each course for URL routing and save to local storage
-        const processedCourses = coursesData.map(course => ({
-            ...course,
-            slug: `${course.language}-${course.level}-${course.id}`.replace(/\s/g, '-')
-        }));
-
-        saveCoursesToLocal(processedCourses);
-        return processedCourses;
-    } catch (error) {
-        console.error("Failed to load or process courses from server", error);
-        return [];
-    }
-}
-
-export async function fetchAllLanguages(courses: Course[]): Promise<Language[]> {
-    try {
-        const languagesResponse = await fetch(`${API_BASE_URL}/languages`);
-        if (!languagesResponse.ok) {
-            throw new Error(`Failed to fetch languages: ${languagesResponse.statusText}`);
-        }
-        const languagesData: Omit<Language, 'courseCount'>[] = await languagesResponse.json();
-        
-        // Add the courseCount to each language based on the current course list.
-        return languagesData.map(lang => ({
-            ...lang,
-            courseCount: courses.filter(c => c.language === lang.name).length
-        }));
-    } catch (error) {
-        console.error("Failed to load or process languages", error);
-        return [];
-    }
-}
-
 export async function fetchAllCourses(): Promise<Course[]> {
-    const localCourses = loadCoursesFromLocal();
-    if (localCourses) {
-        console.log("Loaded courses from localStorage.");
-        return localCourses;
-    }
-    console.log("Fetching courses from server and priming localStorage.");
-    return fetchCoursesFromServer();
+    const response = await fetch(`${API_BASE_URL}/courses`);
+    if (!response.ok) throw new Error(`Failed to fetch courses: ${response.statusText}`);
+    const coursesData: Course[] = await response.json();
+    return coursesData.map(course => ({
+        ...course,
+        slug: `${course.language}-${course.level}-${course.id}`.replace(/\s/g, '-')
+    }));
 }
 
-// This function remains for local profile updates as no API endpoint was specified
+export async function fetchAllLanguages(): Promise<Omit<Language, 'courseCount'>[]> {
+    const response = await fetch(`${API_BASE_URL}/languages`);
+    if (!response.ok) throw new Error(`Failed to fetch languages: ${response.statusText}`);
+    return response.json();
+}
+
+// --- Course Management API ---
+export async function addCourse(course: Omit<Course, 'id' | 'slug'>): Promise<Course> {
+    const response = await fetch(`${API_BASE_URL}/courses`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify(course),
+    });
+    if (!response.ok) throw new Error('Failed to add course');
+    return response.json();
+}
+
+export async function updateCourse(course: Course): Promise<Course> {
+    const response = await fetch(`${API_BASE_URL}/courses?id=${course.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify(course),
+    });
+    if (!response.ok) throw new Error('Failed to update course');
+    return response.json();
+}
+
+export async function deleteCourse(courseId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/courses?id=${courseId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+    });
+    if (!response.ok) throw new Error('Failed to delete course');
+}
+
+// --- Language Management API ---
+export async function addLanguage(language: Omit<Language, 'id' | 'courseCount'>): Promise<Language> {
+    const response = await fetch(`${API_BASE_URL}/languages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify(language),
+    });
+    if (!response.ok) throw new Error('Failed to add language');
+    return response.json();
+}
+
+export async function updateLanguage(language: Language): Promise<Language> {
+    const response = await fetch(`${API_BASE_URL}/languages?id=${language.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+        body: JSON.stringify(language),
+    });
+    if (!response.ok) throw new Error('Failed to update language');
+    return response.json();
+}
+
+export async function deleteLanguage(languageId: number): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/languages?id=${languageId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+    });
+    if (!response.ok) throw new Error('Failed to delete language');
+}
+
+
+// --- User-facing Functions ---
 export async function submitUserInfo(userInfo: UserInfo): Promise<void> {
     console.log('Updating user info locally:', userInfo);
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -125,39 +125,21 @@ export async function submitConsultationRequest(request: {
     course: Course
 }): Promise<void> {
     const { userInfo, course } = request;
-    
     const payload = {
-        name: userInfo.name,
-        phone: userInfo.phone,
-        city: userInfo.city,
-        courseOfInterest: course.language,
-        level: course.level,
-        type: course.type,
-        format: course.format,
-        schedule: course.schedule,
-        price: course.price,
+        name: userInfo.name, phone: userInfo.phone, city: userInfo.city,
+        courseOfInterest: course.language, level: course.level, type: course.type,
+        format: course.format, schedule: course.schedule, price: course.price,
         description: `درخواست مشاوره برای دوره: ${course.language} - ${course.level}`,
     };
     
-    console.log('Submitting consultation request to API:', payload);
+    const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
 
-    try {
-        const response = await fetch(`${API_BASE_URL}/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.text();
-            throw new Error(`API Error: ${response.status} - ${errorData}`);
-        }
-
-        console.log('Consultation request submitted successfully.');
-    } catch (error) {
-        console.error('Failed to submit consultation request:', error);
-        throw error; // Re-throw the error to be handled by the UI
+    if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`API Error: ${response.status} - ${errorData}`);
     }
 }
