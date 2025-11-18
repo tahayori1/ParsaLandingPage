@@ -13,7 +13,7 @@ const Hero: React.FC = () => {
     return (
         <section 
             className="bg-cover bg-center text-white py-20 md:py-32 relative"
-            style={{ backgroundImage: "url('/icons/hero-bg.jpg')" }}
+            style={{ backgroundImage: "url('https://x264.storage.iran.liara.space/parsa/parsa%20hearo%20section.png')" }}
             aria-label="Students learning in a modern classroom"
         >
             <div className="absolute inset-0 bg-parsa-brown-900 opacity-80" aria-hidden="true"></div>

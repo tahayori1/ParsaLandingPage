@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Course, Language, RegisteredUser } from '../types';
 import { formatPrice, formatPhoneNumber } from '../utils/helpers';
@@ -190,7 +189,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                 disabled={isLoadingUsers}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-5 h-5 ${isLoadingUsers ? 'animate-spin' : ''}`}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.922v-.007M2.975 20.318h4.922m0 0a3 3 0 10-4.922 0M16.023 9.348a3 3 0 110-4.922m0 4.922h-5.922m-4.922 0h-5.922m0 0a3 3 0 100-4.922m0 4.922V17.25m-4.922 0h-5.922m0 0a3 3 0 100-4.922m0 4.922V17.25m4.922-4.922a3 3 0 110-4.922m0 4.922h-5.922m-4.922 0h-5.922m0 0a3 3 0 100-4.922m0 4.922V17.25m-4.922-4.922a3 3 0 110-4.922m0 4.922h-5.922m-4.922 0h-5.922m0 0a3 3 0 100-4.922m0 4.922V17.25" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.922v-.007M2.975 20.318h4.922m0 0a3 3 0 10-4.922 0M16.023 9.348a3 3 0 110-4.922m0 4.922h-5.922m-4.922 0h-5.922m0 0a3 3 0 100-4.922m0 4.922V17.25m-4.922 0h-5.922m0 0a3 3 0 100-4.922m0 4.922V17.25m-4.922-4.922a3 3 0 110-4.922m0 4.922h-5.922m-4.922 0h-5.922m0 0a3 3 0 100-4.922m0 4.922V17.25m-4.922-4.922a3 3 0 110-4.922m0 4.922h-5.922m-4.922 0h-5.922m0 0a3 3 0 100-4.922m0 4.922V17.25" />
                                 </svg>
                                 {isLoadingUsers ? 'درحال بارگذاری...' : 'بارگذاری مجدد لیست'}
                             </button>
