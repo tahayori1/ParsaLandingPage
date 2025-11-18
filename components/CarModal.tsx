@@ -68,7 +68,7 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({ course, onClose, 
                         <div className="flex items-center gap-4">
                             <img src={`/icons/lang/${encodeURIComponent(course.language)}.jpg`} alt={course.language} className="w-16 h-16 object-cover rounded-lg" />
                             <div>
-                                <h3 id="course-modal-title" className="text-2xl font-bold text-parsa-gray-800">{course.language}</h3>
+                                <h3 id="course-modal-title" className="text-2xl font-bold text-parsa-brown-800">{course.language}</h3>
                                 <p className="text-parsa-gray-600">{`سطح ${course.level}`}</p>
                             </div>
                         </div>
@@ -79,12 +79,12 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({ course, onClose, 
                 </div>
 
                 <div className="p-6 space-y-6">
-                    <div className="bg-gradient-to-r from-parsa-blue-50 to-parsa-blue-100 p-6 rounded-xl border border-parsa-blue-200">
+                    <div className="bg-gradient-to-r from-parsa-brown-50 to-parsa-brown-100 p-6 rounded-xl border border-parsa-brown-200">
                         <div className="flex items-center gap-3 mb-2">
-                             <svg className="w-6 h-6 text-parsa-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path></svg>
-                            <h4 className="text-lg font-bold text-parsa-blue-700">شهریه دوره</h4>
+                             <svg className="w-6 h-6 text-parsa-brown-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path></svg>
+                            <h4 className="text-lg font-bold text-parsa-brown-700">شهریه دوره</h4>
                         </div>
-                        <p className="text-2xl font-bold text-parsa-blue-800">{formatPrice(course.price)}</p>
+                        <p className="text-2xl font-bold text-parsa-brown-800">{formatPrice(course.price)}</p>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-x-6 gap-y-4">
@@ -95,7 +95,7 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({ course, onClose, 
                     </div>
                      
                     <div className="bg-parsa-gray-50 p-6 rounded-xl">
-                        <h4 className="text-lg font-bold text-parsa-gray-800 mb-4 flex items-center gap-2">
+                        <h4 className="text-lg font-bold text-parsa-brown-800 mb-4 flex items-center gap-2">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                             توضیحات دوره
                         </h4>
@@ -105,16 +105,16 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({ course, onClose, 
                         </div>
                     </div>
                      
-                    <div className="bg-gradient-to-r from-parsa-teal-50 to-parsa-teal-100 p-6 rounded-xl border border-parsa-teal-200 flex flex-wrap items-center justify-between gap-4">
+                    <div className="bg-gradient-to-r from-parsa-orange-50 to-parsa-orange-100 p-6 rounded-xl border border-parsa-orange-200 flex flex-wrap items-center justify-between gap-4">
                        <div>
-                         <h4 className="text-lg font-bold text-parsa-teal-700 mb-2">برای ثبت‌نام و مشاوره رایگان اقدام کنید</h4>
-                         <button onClick={onOpenConsultation} disabled={course.status === 'تکمیل ظرفیت'} className="bg-gradient-to-r from-parsa-teal-500 to-parsa-teal-600 hover:from-parsa-teal-600 hover:to-parsa-teal-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                         <h4 className="text-lg font-bold text-parsa-orange-700 mb-2">برای ثبت‌نام و مشاوره رایگان اقدام کنید</h4>
+                         <button onClick={onOpenConsultation} disabled={course.status === 'تکمیل ظرفیت'} className="bg-gradient-to-r from-parsa-orange-500 to-parsa-orange-600 hover:from-parsa-orange-600 hover:to-parsa-orange-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
                             {course.status === 'تکمیل ظرفیت' ? 'ظرفیت تکمیل' : 'درخواست مشاوره'}
                         </button>
                        </div>
                        <div className="relative">
-                            <button onClick={handleShare} className="bg-white/80 backdrop-blur-sm border border-parsa-teal-200 text-parsa-teal-600 px-4 py-2 rounded-lg font-medium inline-flex items-center gap-2 hover:bg-white transition-colors">
+                            <button onClick={handleShare} className="bg-white/80 backdrop-blur-sm border border-parsa-orange-200 text-parsa-orange-600 px-4 py-2 rounded-lg font-medium inline-flex items-center gap-2 hover:bg-white transition-colors">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12s-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.368a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"></path></svg>
                                 اشتراک‌گذاری
                             </button>

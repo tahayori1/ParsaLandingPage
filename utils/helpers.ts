@@ -92,7 +92,7 @@ export const resetSEOMetadata = () => {
         "@type": "EducationalOrganization",
         "name": "موسسه زبان پارسا",
         "url": BASE_URL,
-        "logo": "/icons/logo.png",
+        "logo": "https://parsa-li.com/wp-content/uploads/sites/158/2024/04/logo.png",
         "address": {
             "@type": "PostalAddress",
             "streetAddress": "بلوار شهید بهشتی، حدفاصل چهارراه بنفشه به سمت چهارراه خلدبرین",

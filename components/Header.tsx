@@ -12,18 +12,18 @@ const Header: React.FC<HeaderProps> = ({ courseCount, onOpenProfile }) => {
             <div className="container mx-auto px-4 py-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 md:gap-4">
-                        <img src="/icons/logo.svg"
+                        <img src="https://parsa-li.com/wp-content/uploads/sites/158/2024/04/logo.png"
                             alt="موسسه زبان پارسا"
                             className="h-12 md:h-14 w-auto" />
                         <div>
-                            <h1 className="text-lg md:text-xl font-bold text-parsa-blue-800">موسسه زبان پارسا</h1>
-                            <p className="text-xs md:text-sm text-parsa-gray-500">آموزش تخصصی زبان‌های خارجی</p>
+                            <h1 className="text-lg md:text-xl font-bold text-parsa-brown-800">موسسه زبان پارسا</h1>
+                            <p className="text-xs md:text-sm text-parsa-gray-500">آموزش زبان از سال ۱۳۸۰</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2 md:gap-4">
                         <div className="hidden lg:flex items-center gap-4">
-                            <div className="bg-parsa-teal-100 text-parsa-teal-700 px-3 py-1.5 rounded-full text-sm font-semibold">
+                            <div className="bg-parsa-orange-100 text-parsa-orange-800 px-3 py-1.5 rounded-full text-sm font-semibold">
                                 <span>{courseCount}</span> دوره فعال
                             </div>
                              <button onClick={onOpenProfile} title="پروفایل کاربری" className="p-2 rounded-full hover:bg-parsa-gray-100 transition-colors">

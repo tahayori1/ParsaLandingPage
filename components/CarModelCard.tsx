@@ -25,7 +25,7 @@ const LanguageCard: React.FC<LanguageCardProps> = ({ language, onSelectLanguage 
                 <p className="text-sm opacity-90">{language.description}</p>
             </div>
             {language.courseCount && language.courseCount > 0 && (
-                <div className="absolute top-2 right-2 bg-parsa-teal-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-md">
+                <div className="absolute top-2 right-2 bg-parsa-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium shadow-md">
                     {language.courseCount} دوره فعال
                 </div>
             )}

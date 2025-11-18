@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { UserInfo, ChatMessage } from '../types';
@@ -86,7 +85,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ userInfo, onUpdateUserInfo }) => {
     const chatbotUI = (
         <>
             <div className="fixed bottom-4 right-4 z-[120]">
-                 <button onClick={() => setIsOpen(!isOpen)} className="bg-gradient-to-r from-parsa-blue-500 to-parsa-blue-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
+                 <button onClick={() => setIsOpen(!isOpen)} className="bg-gradient-to-r from-parsa-orange-500 to-parsa-orange-600 text-white w-16 h-16 rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform">
                      {isOpen ? (
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                      ) : (
@@ -96,9 +95,9 @@ const Chatbot: React.FC<ChatbotProps> = ({ userInfo, onUpdateUserInfo }) => {
             </div>
             <div className={`fixed bottom-24 right-4 w-[calc(100vw-2rem)] sm:w-[350px] h-[65vh] sm:h-[500px] bg-white rounded-2xl shadow-2xl flex flex-col origin-bottom-right z-[120] transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-4 invisible'}`}>
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 bg-parsa-gray-800 text-white rounded-t-2xl flex-shrink-0">
+                <div className="flex items-center justify-between p-4 bg-parsa-brown-800 text-white rounded-t-2xl flex-shrink-0">
                     <div className="flex items-center gap-3">
-                        <img src="/icons/logo-white.svg" alt="Logo" className="w-10 h-10" />
+                        <img src="https://parsa-li.com/wp-content/uploads/sites/158/2024/04/logo.png" alt="Logo" className="w-10 h-10 bg-white p-1 rounded-md" />
                         <div>
                             <h3 className="font-bold">مشاور آنلاین پارسا</h3>
                             <p className="text-xs opacity-80">معمولا سریع پاسخ می‌دهیم</p>
@@ -116,7 +115,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ userInfo, onUpdateUserInfo }) => {
                             {messages.map((msg, index) => (
                                 <div key={index} className={`flex mb-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     {msg.sender === 'user' ? (
-                                        <div className="max-w-[80%] p-3 rounded-2xl text-sm break-words bg-parsa-blue-500 text-white rounded-br-none">
+                                        <div className="max-w-[80%] p-3 rounded-2xl text-sm break-words bg-parsa-orange-500 text-white rounded-br-none">
                                             {msg.text}
                                         </div>
                                     ) : (
@@ -142,8 +141,8 @@ const Chatbot: React.FC<ChatbotProps> = ({ userInfo, onUpdateUserInfo }) => {
                         </div>
                         <form onSubmit={handleSendMessage} className="p-4 border-t border-parsa-gray-200 flex-shrink-0">
                             <div className="flex items-center gap-2">
-                                <input name="message" type="text" placeholder="پیام خود را بنویسید..." className="flex-1 px-4 py-2 border border-parsa-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-parsa-blue-500" />
-                                <button type="submit" className="bg-parsa-blue-500 text-white p-3 rounded-full hover:bg-parsa-blue-600 transition-colors flex-shrink-0">
+                                <input name="message" type="text" placeholder="پیام خود را بنویسید..." className="flex-1 px-4 py-2 border border-parsa-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-parsa-orange-500" />
+                                <button type="submit" className="bg-parsa-orange-500 text-white p-3 rounded-full hover:bg-parsa-orange-600 transition-colors flex-shrink-0">
                                     <svg className="w-5 h-5 -rotate-45" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
                                 </button>
                             </div>
@@ -156,28 +155,28 @@ const Chatbot: React.FC<ChatbotProps> = ({ userInfo, onUpdateUserInfo }) => {
                         <form onSubmit={handleFormSubmit} className="space-y-3">
                             <div>
                                 <label className="block text-xs font-medium text-parsa-gray-700 mb-1">نام و نام خانوادگی</label>
-                                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-blue-500" />
+                                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-orange-500" />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-parsa-gray-700 mb-1">شماره تماس</label>
-                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-blue-500" placeholder="09123456789" />
+                                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-orange-500" placeholder="09123456789" />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-parsa-gray-700 mb-1">زبان مورد علاقه</label>
-                                <select value={courseOfInterest} onChange={(e) => setCourseOfInterest(e.target.value)} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-blue-500 bg-white">
+                                <select value={courseOfInterest} onChange={(e) => setCourseOfInterest(e.target.value)} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-orange-500 bg-white">
                                     <option value="" disabled>انتخاب کنید...</option>
                                     {languages.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-parsa-gray-700 mb-1">شهر</label>
-                                <select value={city} onChange={(e) => setCity(e.target.value)} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-blue-500 bg-white">
+                                <select value={city} onChange={(e) => setCity(e.target.value)} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-orange-500 bg-white">
                                     <option value="" disabled>انتخاب کنید...</option>
                                     {cities.map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
                             {formError && <p className="text-danger text-xs text-center">{formError}</p>}
-                            <button type="submit" className="w-full bg-gradient-to-r from-parsa-blue-500 to-parsa-blue-600 text-white py-3 rounded-lg font-medium">
+                            <button type="submit" className="w-full bg-gradient-to-r from-parsa-orange-500 to-parsa-orange-600 text-white py-3 rounded-lg font-medium">
                                 شروع گفتگو
                             </button>
                         </form>

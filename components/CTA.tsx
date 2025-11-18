@@ -12,14 +12,14 @@ const CTA: React.FC<CTAProps> = ({ whatsappNumber }) => {
     };
 
     return (
-        <section className="bg-gradient-to-r from-parsa-blue-700 to-parsa-blue-900 text-white py-12 md:py-16">
+        <section className="bg-gradient-to-r from-parsa-brown-700 to-parsa-brown-900 text-white py-12 md:py-16">
             <div className="container mx-auto px-4 text-center">
                 <h2 className="text-2xl md:text-4xl font-bold mb-6">برای آینده خود سرمایه‌گذاری کنید!</h2>
                 <p className="text-base md:text-lg mb-8 opacity-90 max-w-2xl mx-auto">
                     همین امروز برای مشاوره رایگان و تعیین سطح اقدام کنید و اولین قدم را برای تسلط بر یک زبان جدید بردارید.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <a href="#courses" onClick={handleScrollToCourses} className="bg-gradient-to-r from-parsa-teal-500 to-parsa-teal-600 hover:from-parsa-teal-600 hover:to-parsa-teal-700 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg inline-flex items-center justify-center gap-2 hover:shadow-xl transition-all">
+                    <a href="#courses" onClick={handleScrollToCourses} className="bg-gradient-to-r from-parsa-orange-500 to-parsa-orange-600 hover:from-parsa-orange-600 hover:to-parsa-orange-700 text-white px-6 md:px-8 py-3 md:py-4 rounded-xl font-semibold text-base md:text-lg inline-flex items-center justify-center gap-2 hover:shadow-xl transition-all">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
                         <span>ثبت درخواست مشاوره</span>
                     </a>

@@ -32,10 +32,10 @@ const ClassCard: React.FC<ClassCardProps> = ({ course, onSelectCourse, onRequest
                 </div>
             </div>
 
-            <h3 className="text-lg font-bold text-parsa-gray-800 mb-1 truncate">{course.language} - {course.level}</h3>
+            <h3 className="text-lg font-bold text-parsa-brown-800 mb-1 truncate">{course.language} - {course.level}</h3>
             <div className="flex items-center gap-2 text-xs text-parsa-gray-500 mb-4">
-                <span className="bg-parsa-blue-100 text-parsa-blue-700 px-2 py-0.5 rounded-full">{course.type}</span>
-                <span className="bg-parsa-teal-100 text-parsa-teal-700 px-2 py-0.5 rounded-full">{course.format}</span>
+                <span className="bg-parsa-brown-100 text-parsa-brown-700 px-2 py-0.5 rounded-full">{course.type}</span>
+                <span className="bg-parsa-orange-100 text-parsa-orange-700 px-2 py-0.5 rounded-full">{course.format}</span>
             </div>
 
             <div className="space-y-2 text-sm text-parsa-gray-600 mb-4 flex-grow">
@@ -53,7 +53,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ course, onSelectCourse, onRequest
                 <button
                     onClick={() => onRequestConsultation(course)}
                     className={`w-full text-white py-2.5 rounded-lg font-medium hover:shadow-lg transition-all text-sm block text-center ${
-                        isUrgent ? 'bg-gradient-to-r from-parsa-teal-500 to-parsa-teal-600 hover:from-parsa-teal-600 hover:to-parsa-teal-700' : 'bg-gradient-to-r from-parsa-blue-500 to-parsa-blue-600 hover:from-parsa-blue-600 hover:to-parsa-blue-700'
+                        isUrgent ? 'bg-gradient-to-r from-parsa-orange-500 to-parsa-orange-600 hover:from-parsa-orange-600 hover:to-parsa-orange-700' : 'bg-gradient-to-r from-parsa-brown-600 to-parsa-brown-700 hover:from-parsa-brown-700 hover:to-parsa-brown-800'
                     }`}
                     disabled={course.status === 'تکمیل ظرفیت'}
                 >
@@ -61,7 +61,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ course, onSelectCourse, onRequest
                 </button>
                 <button
                     onClick={() => onSelectCourse(course)}
-                    className="w-full text-center mt-3 text-parsa-blue-600 hover:text-parsa-blue-700 font-medium text-sm transition-colors"
+                    className="w-full text-center mt-3 text-parsa-brown-600 hover:text-parsa-brown-700 font-medium text-sm transition-colors"
                 >
                     مشاهده جزئیات
                 </button>

@@ -37,7 +37,7 @@ const MainApp: React.FC = () => {
     const [postUserInfoAction, setPostUserInfoAction] = useState<'profile' | null>(null);
 
     // Admin state
-    const [view, setView] = useState(window.location.hash);
+    const [view, setView] = useState(window.location.hash || '#/');
     const [isAdmin, setIsAdmin] = useState(() => !!sessionStorage.getItem('adminAuthToken'));
     const [isCourseFormModalOpen, setIsCourseFormModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -76,18 +76,33 @@ const MainApp: React.FC = () => {
         }
     }, []);
 
+    // Effect for handling routing and view changes
     useEffect(() => {
-        loadData();
-        
-        const handleHashChange = () => {
-            const newHash = window.location.hash;
-            setView(newHash);
+        const handleRouteChange = () => {
+            const currentHash = window.location.hash || '#/';
+            
+            // Key fix: If we are going to the admin page (or are on it),
+            // ensure all user-facing modals are closed BEFORE setting the view.
+            if (currentHash.startsWith('#/admin')) {
+                setSelectedCourse(null);
+                setIsConsultationModalOpen(false);
+                setIsProfileModalOpen(false);
+                setIsUserInfoModalOpen(false);
+            }
+            
+            setView(currentHash);
         };
-        
-        window.addEventListener('hashchange', handleHashChange);
-        return () => window.removeEventListener('hashchange', handleHashChange);
 
-    }, [loadData]);
+        // Run on initial mount to set the correct view and clean up modals if needed
+        handleRouteChange();
+        
+        // Add listener for subsequent hash changes
+        window.addEventListener('hashchange', handleRouteChange);
+        
+        // Cleanup listener on component unmount
+        return () => window.removeEventListener('hashchange', handleRouteChange);
+    }, []);
+
 
     useEffect(() => {
         if (allCourses.length === 0) return;
@@ -101,7 +116,7 @@ const MainApp: React.FC = () => {
                     setSelectedCourse(course);
                     updateSEOMetadataForCourse(course);
                 }
-            } else {
+            } else if (!hash.startsWith('#/admin')) { // Don't clear selection when going to admin
                  setSelectedCourse(null);
             }
         };
@@ -112,7 +127,7 @@ const MainApp: React.FC = () => {
     }, [allCourses]);
 
     // Admin Handlers
-    const handleAdminLogin = async (username: string, password: string): Promise<boolean> => {
+    const handleAdminLogin = async (username: string, password: string): Promise<boolean | string> => {
         try {
             const { token } = await loginAdmin(username, password);
             if (token) {
@@ -120,10 +135,10 @@ const MainApp: React.FC = () => {
                 setIsAdmin(true);
                 return true;
             }
-            return false;
+            return 'توکن دریافت نشد.';
         } catch (error) {
             console.error("Admin login failed:", error);
-            return false;
+            return error instanceof Error ? error.message : 'خطای ناشناخته در ورود.';
         }
     };
 
@@ -177,7 +192,11 @@ const MainApp: React.FC = () => {
     }, []);
 
     const handleCloseCourseModal = useCallback(() => {
-        history.back();
+        if (window.location.hash.startsWith('#/course/')) {
+            history.back();
+        } else {
+            setSelectedCourse(null);
+        }
     }, []);
 
     const handleRequestConsultation = useCallback((course: Course) => {
@@ -225,6 +244,10 @@ const MainApp: React.FC = () => {
     const courseCount = useMemo(() => allCourses.length, [allCourses]);
     const languageCount = useMemo(() => languages.length, [languages]);
 
+    useEffect(() => {
+        loadData();
+    }, [loadData]);
+
     if (isLoading) {
         return <div className="flex items-center justify-center h-screen bg-parsa-light-bg"><div className="text-xl font-semibold text-parsa-gray-600">درحال بارگذاری اطلاعات...</div></div>;
     }
@@ -252,16 +275,15 @@ const MainApp: React.FC = () => {
                 <Footer phoneNumbers={STATIC_PHONE_NUMBERS} />
             </Suspense>
 
-            {/* Modals with guards to prevent rendering on admin page */}
             <Suspense fallback={null}>
-                {selectedCourse && view !== '#/admin' && (
+                {selectedCourse && (
                     <ClassDetailsModal 
                         course={selectedCourse} 
                         onClose={handleCloseCourseModal}
                         onOpenConsultation={() => handleRequestConsultation(selectedCourse)}
                     />
                 )}
-                {isConsultationModalOpen && selectedCourse && view !== '#/admin' && (
+                {isConsultationModalOpen && selectedCourse && (
                      <ConsultationModal 
                         course={selectedCourse}
                         userInfo={userInfo}
@@ -269,14 +291,14 @@ const MainApp: React.FC = () => {
                         onUpdateAndConfirm={handleUserInfoSubmitAndConsult}
                      />
                 )}
-                {isProfileModalOpen && userInfo && view !== '#/admin' && (
+                {isProfileModalOpen && userInfo && (
                     <UserProfileModal 
                         currentUserInfo={userInfo}
                         onClose={handleCloseProfileModal}
                         onUpdate={onUpdateUserInfo}
                     />
                 )}
-                {isUserInfoModalOpen && view !== '#/admin' && (
+                {isUserInfoModalOpen && (
                      <UserInfoModal
                         onSubmit={handleSubmitUserInfoForProfile}
                         onClose={() => {
