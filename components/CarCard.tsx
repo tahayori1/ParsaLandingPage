@@ -20,17 +20,16 @@ const ClassCard: React.FC<ClassCardProps> = ({ course, onSelectCourse, onRequest
 
     return (
         <div className="flex flex-col bg-white rounded-xl shadow-lg p-4 relative transition-all duration-300 ease-in-out hover:transform hover:-translate-y-1 hover:shadow-2xl animate-fade-in">
-            <div className="relative mb-4">
-                {/* Image removed */}
-                <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium border ${statusColors[course.status]}`}>
+            {/* Reorganized top section for status, title, and type/format */}
+            <div className="flex flex-col mb-4">
+                <div className={`self-start px-2 py-1 rounded-full text-xs font-medium border mb-2 ${statusColors[course.status]}`}>
                     {course.status}
                 </div>
-            </div>
-
-            <h3 className="text-lg font-bold text-parsa-brown-800 mb-1 truncate">{course.language} - {course.level}</h3>
-            <div className="flex items-center gap-2 text-xs text-parsa-gray-500 mb-4">
-                <span className="bg-parsa-brown-100 text-parsa-brown-700 px-2 py-0.5 rounded-full">{course.type}</span>
-                <span className="bg-parsa-orange-100 text-parsa-orange-700 px-2 py-0.5 rounded-full">{course.format}</span>
+                <h3 className="text-lg font-bold text-parsa-brown-800 mb-2 truncate">{course.language} - {course.level}</h3>
+                <div className="flex items-center gap-2 text-xs text-parsa-gray-500">
+                    <span className="bg-parsa-brown-100 text-parsa-brown-700 px-2 py-0.5 rounded-full">{course.type}</span>
+                    <span className="bg-parsa-orange-100 text-parsa-orange-700 px-2 py-0.5 rounded-full">{course.format}</span>
+                </div>
             </div>
 
             <div className="space-y-2 text-sm text-parsa-gray-600 mb-4 flex-grow">

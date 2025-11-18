@@ -1,14 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
-import { Course } from '../types';
+import { Course, Language } from '../types';
 
 interface CourseFormModalProps {
     initialData: Course | null;
     onSave: (course: Course) => void;
     onClose: () => void;
+    availableLanguages: Language[]; // New prop for dynamic language list
 }
 
-const CourseFormModal: React.FC<CourseFormModalProps> = ({ initialData, onSave, onClose }) => {
+const CourseFormModal: React.FC<CourseFormModalProps> = ({ initialData, onSave, onClose, availableLanguages }) => {
     const [formData, setFormData] = useState<Omit<Course, 'id' | 'slug'>>({
         language: '',
         level: '',
@@ -24,8 +24,13 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({ initialData, onSave, 
     useEffect(() => {
         if (initialData) {
             setFormData(initialData);
+        } else {
+            // Set default language if available when adding a new course
+            if (availableLanguages.length > 0) {
+                setFormData(prev => ({ ...prev, language: availableLanguages[0].name }));
+            }
         }
-    }, [initialData]);
+    }, [initialData, availableLanguages]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -58,8 +63,12 @@ const CourseFormModal: React.FC<CourseFormModalProps> = ({ initialData, onSave, 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-parsa-gray-700 mb-1">زبان</label>
-                                {/* FIX: Replaced custom .input-style with Tailwind classes */}
-                                <input name="language" value={formData.language} onChange={handleChange} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-orange-500" />
+                                <select name="language" value={formData.language} onChange={handleChange} required className="w-full px-3 py-2 border border-parsa-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-parsa-orange-500 bg-white">
+                                    <option value="" disabled>انتخاب کنید...</option>
+                                    {availableLanguages.map(lang => (
+                                        <option key={lang.id || lang.name} value={lang.name}>{lang.name}</option>
+                                    ))}
+                                </select>
                             </div>
                              <div>
                                 <label className="block text-sm font-medium text-parsa-gray-700 mb-1">سطح</label>

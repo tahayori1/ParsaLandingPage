@@ -34,7 +34,7 @@ const MainApp: React.FC = () => {
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
     const [isConsultationModalOpen, setIsConsultationModalOpen] = useState<boolean>(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
-    const [isUserInfoModalOpen, setIsUserInfoModalOpen] = useState<boolean>(false);
+    const [isUserInfoModalOpen, useStateUserInfoModalOpen] = useState<boolean>(false);
     const [postUserInfoAction, setPostUserInfoAction] = useState<'profile' | null>(null);
 
     // Admin state
@@ -91,7 +91,7 @@ const MainApp: React.FC = () => {
                 setSelectedCourse(null);
                 setIsConsultationModalOpen(false);
                 setIsProfileModalOpen(false);
-                setIsUserInfoModalOpen(false);
+                useStateUserInfoModalOpen(false);
             }
             setView(currentHash);
         };
@@ -269,7 +269,7 @@ const MainApp: React.FC = () => {
         if (userInfo) setIsProfileModalOpen(true);
         else {
             setPostUserInfoAction('profile');
-            setIsUserInfoModalOpen(true);
+            useStateUserInfoModalOpen(true);
         }
     }, [userInfo]);
 
@@ -277,7 +277,7 @@ const MainApp: React.FC = () => {
 
     const handleSubmitUserInfoForProfile = useCallback(async (info: UserInfo) => {
         await onUpdateUserInfo(info);
-        setIsUserInfoModalOpen(false);
+        useStateUserInfoModalOpen(false);
         setIsProfileModalOpen(true);
         setPostUserInfoAction(null);
     }, [onUpdateUserInfo]);
@@ -328,7 +328,7 @@ const MainApp: React.FC = () => {
                 {selectedCourse && !view.startsWith('#/admin') && <ClassDetailsModal course={selectedCourse} onClose={handleCloseCourseModal} onOpenConsultation={() => handleRequestConsultation(selectedCourse)} />}
                 {isConsultationModalOpen && selectedCourse && !view.startsWith('#/admin') && <ConsultationModal course={selectedCourse} userInfo={userInfo} onClose={handleCloseConsultation} onUpdateAndConfirm={handleUserInfoSubmitAndConsult} />}
                 {isProfileModalOpen && userInfo && !view.startsWith('#/admin') && <UserProfileModal currentUserInfo={userInfo} onClose={handleCloseProfileModal} onUpdate={onUpdateUserInfo} />}
-                {isUserInfoModalOpen && !view.startsWith('#/admin') && <UserInfoModal onSubmit={handleSubmitUserInfoForProfile} onClose={() => { setIsUserInfoModalOpen(false); setPostUserInfoAction(null); }} title="اطلاعات شما" description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." submitText="ثبت و ادامه" />}
+                {isUserInfoModalOpen && !view.startsWith('#/admin') && <UserInfoModal onSubmit={handleSubmitUserInfoForProfile} onClose={() => { useStateUserInfoModalOpen(false); setPostUserInfoAction(null); }} title="اطلاعات شما" description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." submitText="ثبت و ادامه" />}
             </Suspense>
             { !view.startsWith('#/admin') && <Suspense fallback={null}><Chatbot userInfo={userInfo} onUpdateUserInfo={onUpdateUserInfo} /></Suspense> }
         </>
@@ -352,7 +352,12 @@ const MainApp: React.FC = () => {
                         onLogout={handleAdminLogout}
                     />
                     {isCourseFormModalOpen && (
-                        <CourseFormModal initialData={editingCourse} onSave={handleSaveCourse} onClose={() => setIsCourseFormModalOpen(false)} />
+                        <CourseFormModal 
+                            initialData={editingCourse} 
+                            onSave={handleSaveCourse} 
+                            onClose={() => setIsCourseFormModalOpen(false)} 
+                            availableLanguages={languages} // Pass available languages
+                        />
                     )}
                     {isLanguageFormModalOpen && (
                         <LanguageFormModal initialData={editingLanguage} onSave={handleSaveLanguage} onClose={() => setIsLanguageFormModalOpen(false)} />
