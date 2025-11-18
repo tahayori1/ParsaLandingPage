@@ -66,7 +66,7 @@ const ClassDetailsModal: React.FC<ClassDetailsModalProps> = ({ course, onClose, 
                 <div className="sticky top-0 bg-white border-b border-parsa-gray-200 p-6 rounded-t-2xl z-10">
                     <div className="flex items-start justify-between">
                         <div className="flex items-center gap-4">
-                            <img src={`/icons/lang/${encodeURIComponent(course.language)}.jpg`} alt={course.language} className="w-16 h-16 object-cover rounded-lg" />
+                            {/* Image removed */}
                             <div>
                                 <h3 id="course-modal-title" className="text-2xl font-bold text-parsa-brown-800">{course.language}</h3>
                                 <p className="text-parsa-gray-600">{`سطح ${course.level}`}</p>

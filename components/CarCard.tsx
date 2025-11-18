@@ -21,12 +21,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ course, onSelectCourse, onRequest
     return (
         <div className="flex flex-col bg-white rounded-xl shadow-lg p-4 relative transition-all duration-300 ease-in-out hover:transform hover:-translate-y-1 hover:shadow-2xl animate-fade-in">
             <div className="relative mb-4">
-                <img 
-                  src={`/icons/lang/${encodeURIComponent(course.language)}.jpg`}
-                  alt={`دوره زبان ${course.language}`}
-                  className="w-full h-48 object-cover rounded-lg"
-                  loading="lazy"
-                />
+                {/* Image removed */}
                 <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-medium border ${statusColors[course.status]}`}>
                     {course.status}
                 </div>
