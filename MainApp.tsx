@@ -101,6 +101,15 @@ const MainApp: React.FC = () => {
         return () => window.removeEventListener('hashchange', handleRouteChange);
     }, []);
 
+    const selectedLanguageNameFromUrl = useMemo(() => {
+        if (view.startsWith('#/language/')) {
+            const langSlug = view.substring(11); // Length of '#/language/'
+            const lang = languages.find(l => encodeURIComponent(l.name.replace(/\s/g, '-')) === langSlug);
+            return lang ? lang.name : null;
+        }
+        return null;
+    }, [view, languages]);
+
 
     useEffect(() => {
         if (allCourses.length === 0) return;
@@ -273,6 +282,17 @@ const MainApp: React.FC = () => {
         setIsProfileModalOpen(true);
         setPostUserInfoAction(null);
     }, [onUpdateUserInfo]);
+    
+    const handleSetSelectedLanguage = useCallback((langName: string) => {
+        window.location.hash = `#/language/${encodeURIComponent(langName.replace(/\s/g, '-'))}`;
+    }, []);
+
+    const handleClearSelectedLanguage = useCallback(() => {
+        window.location.hash = '#/';
+        setTimeout(() => {
+            document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    }, []);
 
     const courseCount = useMemo(() => allCourses.length, [allCourses]);
 
@@ -289,7 +309,15 @@ const MainApp: React.FC = () => {
             <main>
                 <Hero />
                 <QuickStats languageCount={languages.length} courseCount={courseCount} />
-                <CourseCatalog languages={languages} allCourses={allCourses} onSelectCourse={handleSelectCourse} onRequestConsultation={handleRequestConsultation} />
+                <CourseCatalog 
+                    languages={languages} 
+                    allCourses={allCourses} 
+                    selectedLanguage={selectedLanguageNameFromUrl}
+                    onSelectLanguage={handleSetSelectedLanguage}
+                    onGoBack={handleClearSelectedLanguage}
+                    onSelectCourse={handleSelectCourse} 
+                    onRequestConsultation={handleRequestConsultation} 
+                />
                  <Suspense fallback={<div className="text-center p-12 font-semibold">درحال بارگذاری...</div>}>
                     <Testimonials />
                     <Benefits />

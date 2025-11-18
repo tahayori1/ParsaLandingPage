@@ -8,28 +8,39 @@ import { updateSEOMetadataForLanguage, resetSEOMetadata } from '../utils/helpers
 interface CourseCatalogProps {
     languages: Language[];
     allCourses: Course[];
+    selectedLanguage: string | null;
+    onSelectLanguage: (langName: string) => void;
+    onGoBack: () => void;
     onSelectCourse: (course: Course) => void;
     onRequestConsultation: (course: Course) => void;
 }
 
-const CourseCatalog: React.FC<CourseCatalogProps> = ({ languages, allCourses, onSelectCourse, onRequestConsultation }) => {
-    const [selectedLanguage, setSelectedLanguage] = useState<string | null>(null);
+const CourseCatalog: React.FC<CourseCatalogProps> = ({ 
+    languages, 
+    allCourses, 
+    selectedLanguage,
+    onSelectLanguage,
+    onGoBack,
+    onSelectCourse, 
+    onRequestConsultation 
+}) => {
     const [filters, setFilters] = useState({ type: 'all', format: 'all' });
 
-    const scrollInventoryToTop = useCallback(() => {
-        setTimeout(() => {
-            document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-    }, []);
-
     useEffect(() => {
-        const selectedLangData = languages.find(l => l.name === selectedLanguage);
-        if (selectedLangData) {
-            updateSEOMetadataForLanguage(selectedLangData);
+        if (selectedLanguage) {
+            const selectedLangData = languages.find(l => l.name === selectedLanguage);
+            if (selectedLangData) {
+                updateSEOMetadataForLanguage(selectedLangData);
+            }
         } else {
             resetSEOMetadata();
         }
     }, [selectedLanguage, languages]);
+    
+    useEffect(() => {
+        // Reset filters when language changes
+        setFilters({ type: 'all', format: 'all' });
+    }, [selectedLanguage]);
 
     const filteredCourses = useMemo(() => {
         if (!selectedLanguage) return [];
@@ -38,19 +49,6 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({ languages, allCourses, on
             .filter(c => filters.type === 'all' || c.type === filters.type)
             .filter(c => filters.format === 'all' || c.format === filters.format);
     }, [selectedLanguage, allCourses, filters]);
-
-    const handleSelectLanguage = useCallback((langName: string) => {
-        setSelectedLanguage(langName);
-        setFilters({ type: 'all', format: 'all' });
-        history.pushState({ language: langName }, '', `#/language/${encodeURIComponent(langName.replace(/\s/g, '-'))}`);
-        scrollInventoryToTop();
-    }, [scrollInventoryToTop]);
-
-    const handleGoBack = useCallback(() => {
-        setSelectedLanguage(null);
-        history.pushState(null, '', window.location.pathname + window.location.search);
-        scrollInventoryToTop();
-    }, [scrollInventoryToTop]);
     
     const handleFilterChange = (type: 'type' | 'format', value: string) => {
         setFilters(prev => ({ ...prev, [type]: value }));
@@ -66,7 +64,7 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({ languages, allCourses, on
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                         {languages.map(lang => (
-                            <LanguageCard key={lang.name} language={lang} onSelectLanguage={handleSelectLanguage} />
+                            <LanguageCard key={lang.name} language={lang} onSelectLanguage={onSelectLanguage} />
                         ))}
                     </div>
                 </div>
@@ -102,7 +100,7 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({ languages, allCourses, on
                 </div>
 
                 <div className="text-center mb-8">
-                     <button onClick={handleGoBack} className="text-parsa-orange-600 hover:text-parsa-orange-800 hover:underline inline-flex items-center gap-2 transition-colors font-medium">
+                     <button onClick={onGoBack} className="text-parsa-orange-600 hover:text-parsa-orange-800 hover:underline inline-flex items-center gap-2 transition-colors font-medium">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 rtl:-scale-x-100" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                         بازگشت به لیست زبان‌ها
                     </button>
