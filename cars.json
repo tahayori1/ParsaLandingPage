@@ -1,0 +1,43 @@
+
+[
+  {
+    "name": "انگلیسی",
+    "description": "جامع‌ترین دوره‌های انگلیسی",
+    "image": "/icons/lang/انگلیسی.jpg"
+  },
+  {
+    "name": "آلمانی",
+    "description": "از مبتدی تا پیشرفته",
+    "image": "/icons/lang/آلمانی.jpg"
+  },
+  {
+    "name": "فرانسه",
+    "description": "مکالمه روان و گرامر",
+    "image": "/icons/lang/فرانسه.jpg"
+  },
+  {
+    "name": "اسپانیایی",
+    "description": "یادگیری با شور و هیجان",
+    "image": "/icons/lang/اسپانیایی.jpg"
+  },
+  {
+    "name": "ترکی استانبولی",
+    "description": "آمادگی آزمون TÖMER",
+    "image": "/icons/lang/ترکی استانبولی.jpg"
+  },
+  {
+    "name": "ایتالیایی",
+    "description": "زبان هنر و فرهنگ",
+    "image": "/icons/lang/ایتالیایی.jpg"
+  },
+  {
+    "name": "دوره IELTS",
+    "description": "کسب نمره رویایی شما",
+    "image": "/icons/lang/دوره IELTS.jpg"
+  },
+  {
+    "name": "دوره TTC",
+    "description": "تربیت مدرس حرفه‌ای",
+    "image": "/icons/lang/دوره TTC.jpg"
+  }
+]

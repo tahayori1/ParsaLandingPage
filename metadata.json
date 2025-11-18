@@ -1,0 +1,5 @@
+{
+  "name": "Parsa Language Institute",
+  "description": "A web application for Parsa Language Institute in Shiraz, allowing users to view available language courses (English, German, French, etc.), filter classes by type (group, private, online, in-person), and request placement tests or consultations.",
+  "requestFramePermissions": []
+}
