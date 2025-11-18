@@ -33,3 +33,18 @@ export interface ChatMessage {
     text: string;
     timestamp: number;
 }
+
+export interface RegisteredUser {
+    id: number;
+    name: string;
+    phone: string;
+    city: string;
+    courseOfInterest: string;
+    level: string;
+    type: string;
+    format: string;
+    schedule: string;
+    price: number;
+    description: string;
+    created_at: string; // ISO 8601 string
+}

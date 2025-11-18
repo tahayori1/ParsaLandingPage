@@ -1,4 +1,5 @@
-import type { Language, Course, UserInfo } from '../types';
+
+import type { Language, Course, UserInfo, RegisteredUser } from '../types';
 
 const API_BASE_URL = 'https://api.parsa-li.com/webhook/d941ca98-b8fc-4a10-aba8-a6e17706f3ca';
 
@@ -114,6 +115,22 @@ export async function deleteLanguage(languageId: number): Promise<void> {
     if (!response.ok) throw new Error('Failed to delete language');
 }
 
+// --- Registered Users API ---
+export async function fetchRegisteredUsers(): Promise<RegisteredUser[]> {
+    const token = getToken();
+    if (!token) throw new Error('Authentication token not found. Please log in again.');
+
+    const response = await fetch(`${API_BASE_URL}/registers`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json(); // Assuming error response is JSON
+        throw new Error(errorData.message || `Failed to fetch registered users: ${response.statusText}`);
+    }
+    return response.json();
+}
 
 // --- User-facing Functions ---
 export async function submitUserInfo(userInfo: UserInfo): Promise<void> {

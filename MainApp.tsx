@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Course, UserInfo, Language } from './types';
 import { updateSEOMetadataForCourse } from './utils/helpers';
@@ -326,12 +325,12 @@ const MainApp: React.FC = () => {
             </main>
             <Suspense fallback={null}><Footer phoneNumbers={STATIC_PHONE_NUMBERS} /></Suspense>
             <Suspense fallback={null}>
-                {selectedCourse && <ClassDetailsModal course={selectedCourse} onClose={handleCloseCourseModal} onOpenConsultation={() => handleRequestConsultation(selectedCourse)} />}
-                {isConsultationModalOpen && selectedCourse && <ConsultationModal course={selectedCourse} userInfo={userInfo} onClose={handleCloseConsultation} onUpdateAndConfirm={handleUserInfoSubmitAndConsult} />}
-                {isProfileModalOpen && userInfo && <UserProfileModal currentUserInfo={userInfo} onClose={handleCloseProfileModal} onUpdate={onUpdateUserInfo} />}
-                {isUserInfoModalOpen && <UserInfoModal onSubmit={handleSubmitUserInfoForProfile} onClose={() => { setIsUserInfoModalOpen(false); setPostUserInfoAction(null); }} title="اطلاعات شما" description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." submitText="ثبت و ادامه" />}
+                {selectedCourse && !view.startsWith('#/admin') && <ClassDetailsModal course={selectedCourse} onClose={handleCloseCourseModal} onOpenConsultation={() => handleRequestConsultation(selectedCourse)} />}
+                {isConsultationModalOpen && selectedCourse && !view.startsWith('#/admin') && <ConsultationModal course={selectedCourse} userInfo={userInfo} onClose={handleCloseConsultation} onUpdateAndConfirm={handleUserInfoSubmitAndConsult} />}
+                {isProfileModalOpen && userInfo && !view.startsWith('#/admin') && <UserProfileModal currentUserInfo={userInfo} onClose={handleCloseProfileModal} onUpdate={onUpdateUserInfo} />}
+                {isUserInfoModalOpen && !view.startsWith('#/admin') && <UserInfoModal onSubmit={handleSubmitUserInfoForProfile} onClose={() => { setIsUserInfoModalOpen(false); setPostUserInfoAction(null); }} title="اطلاعات شما" description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." submitText="ثبت و ادامه" />}
             </Suspense>
-            <Suspense fallback={null}><Chatbot userInfo={userInfo} onUpdateUserInfo={onUpdateUserInfo} /></Suspense>
+            { !view.startsWith('#/admin') && <Suspense fallback={null}><Chatbot userInfo={userInfo} onUpdateUserInfo={onUpdateUserInfo} /></Suspense> }
         </>
     );
 
