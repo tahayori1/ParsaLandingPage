@@ -28,12 +28,6 @@ export interface UserInfo {
     courseOfInterest?: string; // Replaces carOfInterest
 }
 
-export interface ChatMessage {
-    sender: 'user' | 'bot';
-    text: string;
-    timestamp: number;
-}
-
 export interface RegisteredUser {
     id: number;
     name: string;

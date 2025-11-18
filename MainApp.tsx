@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { Course, UserInfo, Language } from './types';
 import { updateSEOMetadataForCourse } from './utils/helpers';
@@ -17,7 +18,6 @@ const ClassDetailsModal = lazy(() => import('./components/CarModal')); // Re-usi
 const ConsultationModal = lazy(() => import('./components/ConsultationModal'));
 const UserProfileModal = lazy(() => import('./components/UserProfileModal'));
 const UserInfoModal = lazy(() => import('./components/UserInfoModal'));
-const Chatbot = lazy(() => import('./components/Chatbot'));
 const AdminLogin = lazy(() => import('./components/AdminLogin'));
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
 const CourseFormModal = lazy(() => import('./components/CourseFormModal'));
@@ -330,7 +330,6 @@ const MainApp: React.FC = () => {
                 {isProfileModalOpen && userInfo && !view.startsWith('#/admin') && <UserProfileModal currentUserInfo={userInfo} onClose={handleCloseProfileModal} onUpdate={onUpdateUserInfo} />}
                 {isUserInfoModalOpen && !view.startsWith('#/admin') && <UserInfoModal onSubmit={handleSubmitUserInfoForProfile} onClose={() => { useStateUserInfoModalOpen(false); setPostUserInfoAction(null); }} title="اطلاعات شما" description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." submitText="ثبت و ادامه" />}
             </Suspense>
-            { !view.startsWith('#/admin') && <Suspense fallback={null}><Chatbot userInfo={userInfo} onUpdateUserInfo={onUpdateUserInfo} /></Suspense> }
         </>
     );
 
