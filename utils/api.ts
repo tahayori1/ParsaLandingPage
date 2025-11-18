@@ -1,4 +1,3 @@
-
 import type { Language, Course, UserInfo } from '../types';
 
 const API_BASE_URL = 'https://api.parsa-li.com/webhook/d941ca98-b8fc-4a10-aba8-a6e17706f3ca';
@@ -24,16 +23,20 @@ export async function loginAdmin(username: string, password: string): Promise<{ 
         body: JSON.stringify({ username, password: hashedPassword }),
     });
 
-    const data = await response.json();
+    const data = await response.json(); // data can be an array or an error object
+
     if (!response.ok) {
+        // Handle error responses, which are likely objects
         throw new Error(data.message || 'Login failed. Please check your credentials.');
     }
     
-    if (!data.token) {
-        throw new Error('Login response did not include a token.');
+    // Handle success response, which is an array: [{ "token": "12345" }]
+    if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].token === 'string') {
+        return { token: data[0].token }; // Return the object MainApp.tsx expects
     }
     
-    return data;
+    // If the successful response is not in the expected format
+    throw new Error('Login response did not include a valid token.');
 }
 
 // --- Data Fetching Functions ---
