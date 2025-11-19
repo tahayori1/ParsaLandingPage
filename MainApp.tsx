@@ -23,6 +23,7 @@ const AdminLogin = lazy(() => import('./components/AdminLogin'));
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
 const CourseFormModal = lazy(() => import('./components/CourseFormModal'));
 const LanguageFormModal = lazy(() => import('./components/LanguageFormModal'));
+const ClubModal = lazy(() => import('./components/ClubModal'));
 
 const STATIC_PHONE_NUMBERS = ['09173162644', '09013443574', '071-32331829', '071-32357641'];
 const WHATSAPP_NUMBER = '09173162644';
@@ -38,7 +39,8 @@ const MainApp: React.FC = () => {
     const [isConsultationModalOpen, setIsConsultationModalOpen] = useState<boolean>(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
     const [isUserInfoModalOpen, useStateUserInfoModalOpen] = useState<boolean>(false);
-    const [, setPostUserInfoAction] = useState<'profile' | null>(null); // Kept for potential future expansion
+    const [isClubModalOpen, setIsClubModalOpen] = useState<boolean>(false); // Club Modal State
+    const [, setPostUserInfoAction] = useState<'profile' | null>(null); 
 
     // Routing & Auth State
     const [view, setView] = useState(window.location.hash || '#/');
@@ -97,6 +99,11 @@ const MainApp: React.FC = () => {
 
     // Routing Logic
     useEffect(() => {
+        const handleRouteCheck = () => {
+            // Reset overflow on route change to fix black screen issues
+            document.body.style.overflow = '';
+        }
+
         const handleRouteChange = () => {
             const currentHash = window.location.hash || '#/';
             
@@ -106,8 +113,9 @@ const MainApp: React.FC = () => {
                 setIsConsultationModalOpen(false);
                 setIsProfileModalOpen(false);
                 useStateUserInfoModalOpen(false);
-                // Safety: Force reset overflow to ensure scrolling is enabled and no modal artifacts remain
-                document.body.style.overflow = '';
+                setIsClubModalOpen(false);
+                // Force reset overflow
+                handleRouteCheck();
             }
             
             setView(currentHash);
@@ -125,25 +133,20 @@ const MainApp: React.FC = () => {
 
         const hash = window.location.hash;
         if (hash.startsWith('#/course/')) {
-            // Decode URI component to handle Persian characters correctly
-            const slug = decodeURIComponent(hash.substring(9)); // 9 is length of '#/course/'
+            const slug = decodeURIComponent(hash.substring(9)); 
             const course = allCourses.find(c => c.slug === slug);
             if(course) {
                 setSelectedCourse(course);
                 updateSEOMetadataForCourse(course);
             }
         } else if (!hash.startsWith('#/admin') && !hash.startsWith('#/language/')) {
-             // Only clear course if we are not in admin or language view
-             // But if we are just navigating back to home or list, clear it.
              setSelectedCourse(null);
         }
     }, [allCourses, view]);
 
     const selectedLanguageNameFromUrl = useMemo(() => {
         if (view.startsWith('#/language/')) {
-            // Extract language name from URL, handle encoded characters
-            const langSlug = decodeURIComponent(view.substring(11)); // Length of '#/language/'
-            // Match slug (hyphenated) back to name (spaced) logic
+            const langSlug = decodeURIComponent(view.substring(11)); 
             const lang = languages.find(l => l.name.replace(/\s/g, '-') === langSlug);
             return lang ? lang.name : null;
         }
@@ -256,8 +259,6 @@ const MainApp: React.FC = () => {
     }, []);
 
     const handleCloseCourseModal = useCallback(() => {
-        // If we are on a deep link, go back. If not (e.g. opened from list), just close.
-        // Simplest strategy for this SPA: go back to language list or home.
         if (window.history.length > 1) {
              window.history.back();
         } else {
@@ -266,7 +267,6 @@ const MainApp: React.FC = () => {
     }, []);
 
     const handleRequestConsultation = useCallback((course: Course) => {
-        // Ensure course is set before opening modal
         if (!selectedCourse || selectedCourse.id !== course.id) {
             setSelectedCourse(course);
         }
@@ -309,7 +309,6 @@ const MainApp: React.FC = () => {
 
     const handleClearSelectedLanguage = useCallback(() => {
         window.location.hash = '#/';
-        // Scroll to top of courses section smoothly
         setTimeout(() => {
             const el = document.getElementById('courses');
             if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -331,7 +330,11 @@ const MainApp: React.FC = () => {
     const renderMainApp = () => (
         <>
             <UrgencyBanner />
-            <Header courseCount={courseCount} onOpenProfile={handleOpenProfileModal} />
+            <Header 
+                courseCount={courseCount} 
+                onOpenProfile={handleOpenProfileModal}
+                onOpenClub={() => setIsClubModalOpen(true)}
+            />
             <main>
                 <Hero />
                 <QuickStats languageCount={languages.length} courseCount={courseCount} />
@@ -352,7 +355,7 @@ const MainApp: React.FC = () => {
             </main>
             <Suspense fallback={null}><Footer phoneNumbers={STATIC_PHONE_NUMBERS} /></Suspense>
             
-            {/* Modals - Only render if NOT in admin view to prevent black screen overlay issues */}
+            {/* Modals - Only render if NOT in admin view */}
             <Suspense fallback={null}>
                 {!view.startsWith('#/admin') && selectedCourse && (
                     <ClassDetailsModal 
@@ -384,6 +387,9 @@ const MainApp: React.FC = () => {
                         description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." 
                         submitText="ثبت و ادامه" 
                     />
+                )}
+                {!view.startsWith('#/admin') && isClubModalOpen && (
+                    <ClubModal onClose={() => setIsClubModalOpen(false)} />
                 )}
             </Suspense>
         </>

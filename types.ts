@@ -42,3 +42,14 @@ export interface RegisteredUser {
     description: string;
     created_at: string; // ISO 8601 string
 }
+
+export interface ClubMember {
+    id?: number;
+    name: string;
+    phone_number: string;
+    status: '🟢فعال' | '🔴غیرفعال';
+    magic_number?: number;
+    discount_code?: string | null;
+    datetime?: string | null;
+    created_at?: string;
+}

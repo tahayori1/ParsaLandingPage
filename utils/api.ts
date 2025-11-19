@@ -1,7 +1,8 @@
 
-import type { Language, Course, UserInfo, RegisteredUser } from '../types';
+import type { Language, Course, UserInfo, RegisteredUser, ClubMember } from '../types';
 
 const API_BASE_URL = 'https://api.parsa-li.com/webhook/d941ca98-b8fc-4a10-aba8-a6e17706f3ca';
+const CLUB_MEMBERS_API_URL = 'https://api.hoseinikhodro.com/webhook-test/d941ca98-b8fc-4a10-aba8-a6e17706f3ca/club/members';
 
 // --- Helper Functions ---
 
@@ -35,8 +36,11 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
         headers,
     };
 
+    // Handle both relative (to API_BASE_URL) and absolute URLs
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+
     try {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+        const response = await fetch(url, config);
 
         if (!response.ok) {
             // Try to parse error message from JSON, fallback to status text
@@ -52,9 +56,16 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
             throw new Error(errorMessage);
         }
 
-        // Return empty object for 204 No Content, otherwise parse JSON
+        // Return empty object for 204 No Content
         if (response.status === 204) {
             return {} as T;
+        }
+
+        // Special handling for text responses (like club/verify)
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") === -1) {
+             const text = await response.text();
+             return text as unknown as T;
         }
 
         return await response.json();
@@ -161,6 +172,57 @@ export async function fetchRegisteredUsers(): Promise<RegisteredUser[]> {
     });
 }
 
+// --- Club API (Public) ---
+
+export async function registerClubUser(data: { first_name: string, last_name: string, mobile: string }): Promise<any> {
+    return request<any>('/club/register', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    });
+}
+
+export async function requestClubCode(mobile: string): Promise<any> {
+    return request<any>('/club/code', {
+        method: 'POST',
+        body: JSON.stringify({ mobile }),
+    });
+}
+
+export async function verifyClubCode(mobile: string, code: string): Promise<string> {
+    return request<string>('/club/verify', {
+        method: 'POST',
+        body: JSON.stringify({ mobile, code }),
+    });
+}
+
+// --- Club Members Management API (Admin) ---
+
+export async function fetchClubMembers(): Promise<ClubMember[]> {
+    return request<ClubMember[]>(CLUB_MEMBERS_API_URL, {
+        method: 'GET',
+    });
+}
+
+export async function addClubMember(member: Omit<ClubMember, 'id'>): Promise<ClubMember> {
+    return request<ClubMember>(CLUB_MEMBERS_API_URL, {
+        method: 'POST',
+        body: JSON.stringify(member),
+    });
+}
+
+export async function updateClubMember(member: ClubMember): Promise<ClubMember> {
+    return request<ClubMember>(`${CLUB_MEMBERS_API_URL}?id=${member.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(member),
+    });
+}
+
+export async function deleteClubMember(memberId: number): Promise<void> {
+    return request<void>(`${CLUB_MEMBERS_API_URL}?id=${memberId}`, {
+        method: 'DELETE',
+    });
+}
+
 // --- User-facing Functions ---
 
 export async function submitUserInfo(userInfo: UserInfo): Promise<void> {
@@ -186,8 +248,6 @@ export async function submitConsultationRequest(requestData: {
         description: `درخواست مشاوره برای دوره: ${course.language} - ${course.level}`,
     };
     
-    // This endpoint might be public or protected depending on backend. 
-    // Assuming public submission doesn't need admin token.
     const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
