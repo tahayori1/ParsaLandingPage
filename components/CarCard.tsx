@@ -18,6 +18,12 @@ const ClassCard: React.FC<ClassCardProps> = ({ course, onSelectCourse, onRequest
         'تکمیل ظرفیت': 'bg-red-100 text-red-800 border-red-200',
     };
 
+    // SEO FIX: Use anchor tag handler
+    const handleDetailsClick = (e: React.MouseEvent) => {
+        e.preventDefault();
+        onSelectCourse(course);
+    };
+
     return (
         <div className="flex flex-col bg-white rounded-xl shadow-lg p-4 relative transition-all duration-300 ease-in-out hover:transform hover:-translate-y-1 hover:shadow-2xl animate-fade-in">
             {/* Reorganized top section for status, title, and type/format */}
@@ -25,7 +31,11 @@ const ClassCard: React.FC<ClassCardProps> = ({ course, onSelectCourse, onRequest
                 <div className={`self-start px-2 py-1 rounded-full text-xs font-medium border mb-2 ${statusColors[course.status]}`}>
                     {course.status}
                 </div>
-                <h3 className="text-lg font-bold text-parsa-brown-800 mb-2 truncate">{course.language} - {course.level}</h3>
+                <h3 className="text-lg font-bold text-parsa-brown-800 mb-2 truncate">
+                    <a href={`#/course/${course.slug}`} onClick={handleDetailsClick} className="hover:text-parsa-orange-600 transition-colors">
+                        {course.language} - {course.level}
+                    </a>
+                </h3>
                 <div className="flex items-center gap-2 text-xs text-parsa-gray-500">
                     <span className="bg-parsa-brown-100 text-parsa-brown-700 px-2 py-0.5 rounded-full">{course.type}</span>
                     <span className="bg-parsa-orange-100 text-parsa-orange-700 px-2 py-0.5 rounded-full">{course.format}</span>
@@ -46,19 +56,23 @@ const ClassCard: React.FC<ClassCardProps> = ({ course, onSelectCourse, onRequest
             <div>
                 <button
                     onClick={() => onRequestConsultation(course)}
-                    className={`w-full text-white py-2.5 rounded-lg font-medium hover:shadow-lg transition-all text-sm block text-center ${
+                    className={`w-full text-white py-2.5 rounded-lg font-medium hover:shadow-lg transition-all text-sm block text-center mb-3 ${
                         isUrgent ? 'bg-gradient-to-r from-parsa-orange-500 to-parsa-orange-600 hover:from-parsa-orange-600 hover:to-parsa-orange-700' : 'bg-gradient-to-r from-parsa-brown-600 to-parsa-brown-700 hover:from-parsa-brown-700 hover:to-parsa-brown-800'
                     }`}
                     disabled={course.status === 'تکمیل ظرفیت'}
                 >
                     {course.status === 'تکمیل ظرفیت' ? 'ظرفیت تکمیل' : 'مشاوره و ثبت‌نام'}
                 </button>
-                <button
-                    onClick={() => onSelectCourse(course)}
-                    className="w-full text-center mt-3 text-parsa-brown-600 hover:text-parsa-brown-700 font-medium text-sm transition-colors"
+                
+                {/* SEO FIX: Changed Button to Anchor for crawlability */}
+                <a
+                    href={`#/course/${course.slug}`}
+                    onClick={handleDetailsClick}
+                    className="block w-full text-center text-parsa-brown-600 hover:text-parsa-brown-700 font-medium text-sm transition-colors"
+                    title={`مشاهده جزئیات دوره ${course.language} سطح ${course.level}`}
                 >
                     مشاهده جزئیات
-                </button>
+                </a>
             </div>
         </div>
     );

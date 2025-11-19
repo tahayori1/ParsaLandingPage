@@ -14,6 +14,7 @@ import CourseCatalog from './components/CarInventory';
 const Testimonials = lazy(() => import('./components/Testimonials'));
 const Benefits = lazy(() => import('./components/Benefits'));
 const CTA = lazy(() => import('./components/CTA'));
+const FAQ = lazy(() => import('./components/FAQ')); // Added FAQ
 const Footer = lazy(() => import('./components/Footer'));
 const ClassDetailsModal = lazy(() => import('./components/CarModal'));
 const ConsultationModal = lazy(() => import('./components/ConsultationModal'));
@@ -348,8 +349,9 @@ const MainApp: React.FC = () => {
                     onRequestConsultation={handleRequestConsultation} 
                 />
                  <Suspense fallback={<div className="py-12 text-center">درحال بارگذاری...</div>}>
-                    <Testimonials />
                     <Benefits />
+                    <Testimonials />
+                    <FAQ /> {/* Added FAQ Section for SEO Content */}
                     <CTA whatsappNumber={WHATSAPP_NUMBER} />
                 </Suspense>
             </main>

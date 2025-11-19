@@ -4,7 +4,7 @@ import React from 'react';
 interface HeaderProps {
     courseCount: number;
     onOpenProfile: () => void;
-    onOpenClub?: () => void; // Added prop
+    onOpenClub?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ courseCount, onOpenProfile, onOpenClub }) => {
@@ -13,7 +13,7 @@ const Header: React.FC<HeaderProps> = ({ courseCount, onOpenProfile, onOpenClub 
             <div className="container mx-auto px-4 py-3">
                 <div className="flex items-center justify-between">
                     {/* Logo and Title */}
-                    <div className="flex items-center gap-3 md:gap-4">
+                    <a href="#/" className="flex items-center gap-3 md:gap-4 group" aria-label="صفحه اصلی موسسه زبان پارسا">
                         <img src="https://parsa-li.com/wp-content/uploads/sites/158/2024/04/logo.png"
                             alt="لوگوی موسسه زبان پارسا"
                             className="h-12 md:h-14 w-auto" 
@@ -21,10 +21,11 @@ const Header: React.FC<HeaderProps> = ({ courseCount, onOpenProfile, onOpenClub 
                             height="56"
                         />
                         <div>
-                            <h1 className="text-lg md:text-xl font-bold text-parsa-brown-800">موسسه زبان پارسا</h1>
+                            {/* SEO FIX: Changed h1 to div so the Hero section h1 takes precedence for ranking */}
+                            <div className="text-lg md:text-xl font-bold text-parsa-brown-800 group-hover:text-parsa-orange-600 transition-colors">موسسه زبان پارسا</div>
                             <p className="text-xs md:text-sm text-parsa-gray-500">آموزش زبان از سال ۱۳۸۰</p>
                         </div>
-                    </div>
+                    </a>
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 md:gap-4">
