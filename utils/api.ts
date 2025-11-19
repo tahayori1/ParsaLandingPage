@@ -2,7 +2,7 @@
 import type { Language, Course, UserInfo, RegisteredUser, ClubMember } from '../types';
 
 const API_BASE_URL = 'https://api.parsa-li.com/webhook/d941ca98-b8fc-4a10-aba8-a6e17706f3ca';
-const CLUB_MEMBERS_API_URL = 'https://api.hoseinikhodro.com/webhook-test/d941ca98-b8fc-4a10-aba8-a6e17706f3ca/club/members';
+const CLUB_MEMBERS_API_URL = API_BASE_URL + '/club/members';
 
 // --- Helper Functions ---
 
