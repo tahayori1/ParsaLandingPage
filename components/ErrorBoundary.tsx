@@ -1,3 +1,4 @@
+
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
@@ -23,18 +24,20 @@ class ErrorBoundary extends Component<Props, State> {
     console.error("Uncaught error in component:", error, errorInfo);
   }
 
-  public render() {
+  // FIX: Added explicit return type to render method to help TypeScript infer `this.props` correctly.
+  public render(): React.ReactNode {
+    const { children } = this.props;
     if (this.state.hasError) {
       // You can render any custom fallback UI
       return (
         <div className="text-center p-8 bg-red-50 text-red-700 rounded-lg border border-red-200">
           <h2 className="text-xl font-semibold mb-2">خطایی رخ داده است</h2>
-          <p>مشکلی در بارگذاری این بخش پیش آمده است. لطفا صفحه را مجددا بارگذاری کنید.</p>
+          <p>مشکلی در بارگذاری این بخش پیش آمده است. لطفا صفحه را مجدداً بارگذاری کنید.</p>
         </div>
       );
     }
 
-    return this.props.children;
+    return children;
   }
 }
 

@@ -51,6 +51,11 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
             setUsersError(null);
         }
     }, [activeTab, loadRegisteredUsers]);
+
+    const handleGoToMainSite = () => {
+        window.location.hash = '#/'; // Navigate to homepage
+        onLogout(); // Log out from admin session
+    };
     
     return (
         <div className="bg-parsa-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
@@ -60,12 +65,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                         <img src="https://parsa-li.com/wp-content/uploads/sites/158/2024/04/logo.png" alt="Parsa Institute" className="h-10 w-auto"/>
                         <h1 className="text-2xl font-bold text-parsa-brown-800">پنل مدیریت</h1>
                     </div>
-                    <button 
-                        onClick={onLogout}
-                        className="bg-parsa-gray-200 text-parsa-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-parsa-gray-300 transition-colors text-sm"
-                    >
-                        خروج
-                    </button>
+                    <div className="flex gap-3">
+                        <button 
+                            onClick={handleGoToMainSite}
+                            className="bg-parsa-gray-200 text-parsa-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-parsa-gray-300 transition-colors text-sm"
+                        >
+                            بازگشت به سایت اصلی
+                        </button>
+                        <button 
+                            onClick={onLogout}
+                            className="bg-parsa-gray-200 text-parsa-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-parsa-gray-300 transition-colors text-sm"
+                        >
+                            خروج
+                        </button>
+                    </div>
                 </header>
                 
                 <div className="border-b border-gray-200 mb-6">
