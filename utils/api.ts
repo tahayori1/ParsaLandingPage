@@ -3,155 +3,191 @@ import type { Language, Course, UserInfo, RegisteredUser } from '../types';
 
 const API_BASE_URL = 'https://api.parsa-li.com/webhook/d941ca98-b8fc-4a10-aba8-a6e17706f3ca';
 
-// --- Hashing Utility ---
+// --- Helper Functions ---
+
 async function hashPassword(password: string): Promise<string> {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
     const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
 const getToken = () => sessionStorage.getItem('adminAuthToken');
 
+/**
+ * Generic wrapper for fetch requests to handle headers, errors, and JSON parsing.
+ */
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const token = getToken();
+    
+    const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {}),
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const config: RequestInit = {
+        ...options,
+        headers,
+    };
+
+    try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+
+        if (!response.ok) {
+            // Try to parse error message from JSON, fallback to status text
+            let errorMessage = `Error ${response.status}: ${response.statusText}`;
+            try {
+                const errorData = await response.json();
+                if (errorData && errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (e) {
+                // Ignore JSON parse error for error responses
+            }
+            throw new Error(errorMessage);
+        }
+
+        // Return empty object for 204 No Content, otherwise parse JSON
+        if (response.status === 204) {
+            return {} as T;
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error(`API Request Failed: ${endpoint}`, error);
+        throw error;
+    }
+}
+
 // --- Admin Authentication ---
+
 export async function loginAdmin(username: string, password: string): Promise<{ token: string }> {
     const hashedPassword = await hashPassword(password);
+    
+    // Login endpoint usually doesn't need the Bearer token header, but needs Content-Type
     const response = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password: hashedPassword }),
     });
 
-    const data = await response.json(); // data can be an array or an error object
+    const data = await response.json();
 
     if (!response.ok) {
-        // Handle error responses, which are likely objects
-        throw new Error(data.message || 'Login failed. Please check your credentials.');
+        throw new Error(data.message || 'ورود ناموفق بود. لطفا نام کاربری و رمز عبور را بررسی کنید.');
     }
     
-    // Handle success response, which is an array: [{ "token": "12345" }]
-    if (Array.isArray(data) && data.length > 0 && data[0] && typeof data[0].token === 'string') {
-        return { token: data[0].token }; // Return the object MainApp.tsx expects
+    // Handle array response: [{ "token": "12345" }]
+    if (Array.isArray(data) && data.length > 0 && data[0]?.token) {
+        return { token: data[0].token };
     }
     
-    // If the successful response is not in the expected format
-    throw new Error('Login response did not include a valid token.');
+    // Handle object response: { "token": "12345" }
+    if (data && data.token) {
+        return { token: data.token };
+    }
+    
+    throw new Error('پاسخ سرور معتبر نیست (توکن دریافت نشد).');
 }
 
 // --- Data Fetching Functions ---
+
 export async function fetchAllCourses(): Promise<Course[]> {
-    const response = await fetch(`${API_BASE_URL}/courses`);
-    if (!response.ok) throw new Error(`Failed to fetch courses: ${response.statusText}`);
-    const coursesData: Course[] = await response.json();
+    const coursesData = await request<Course[]>('/courses');
     return coursesData.map(course => ({
         ...course,
-        slug: `${course.language}-${course.level}-${course.id}`.replace(/\s/g, '-')
+        slug: `${course.language}-${course.level}-${course.id}`.replace(/\s+/g, '-')
     }));
 }
 
-export async function fetchAllLanguages(): Promise<Omit<Language, 'courseCount'>[]> {
-    const response = await fetch(`${API_BASE_URL}/languages`);
-    if (!response.ok) throw new Error(`Failed to fetch languages: ${response.statusText}`);
-    return response.json();
+export async function fetchAllLanguages(): Promise<Language[]> {
+    return request<Language[]>('/languages');
 }
 
 // --- Course Management API ---
+
 export async function addCourse(course: Omit<Course, 'id' | 'slug'>): Promise<Course> {
-    const response = await fetch(`${API_BASE_URL}/courses`, {
+    return request<Course>('/courses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
         body: JSON.stringify(course),
     });
-    if (!response.ok) throw new Error('Failed to add course');
-    return response.json();
 }
 
 export async function updateCourse(course: Course): Promise<Course> {
-    const response = await fetch(`${API_BASE_URL}/courses?id=${course.id}`, {
+    return request<Course>(`/courses?id=${course.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
         body: JSON.stringify(course),
     });
-    if (!response.ok) throw new Error('Failed to update course');
-    return response.json();
 }
 
 export async function deleteCourse(courseId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/courses?id=${courseId}`, {
+    return request<void>(`/courses?id=${courseId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${getToken()}` },
     });
-    if (!response.ok) throw new Error('Failed to delete course');
 }
 
 // --- Language Management API ---
+
 export async function addLanguage(language: Omit<Language, 'id' | 'courseCount'>): Promise<Language> {
-    const response = await fetch(`${API_BASE_URL}/languages`, {
+    return request<Language>('/languages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
         body: JSON.stringify(language),
     });
-    if (!response.ok) throw new Error('Failed to add language');
-    return response.json();
 }
 
 export async function updateLanguage(language: Language): Promise<Language> {
-    const response = await fetch(`${API_BASE_URL}/languages?id=${language.id}`, {
+    return request<Language>(`/languages?id=${language.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
         body: JSON.stringify(language),
     });
-    if (!response.ok) throw new Error('Failed to update language');
-    return response.json();
 }
 
 export async function deleteLanguage(languageId: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/languages?id=${languageId}`, {
+    return request<void>(`/languages?id=${languageId}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${getToken()}` },
     });
-    if (!response.ok) throw new Error('Failed to delete language');
 }
 
 // --- Registered Users API ---
+
 export async function fetchRegisteredUsers(): Promise<RegisteredUser[]> {
-    const token = getToken();
-    if (!token) throw new Error('Authentication token not found. Please log in again.');
-
-    const response = await fetch(`${API_BASE_URL}/registers`, {
+    return request<RegisteredUser[]>('/registers', {
         method: 'GET',
-        headers: { 'Authorization': `Bearer ${token}` },
     });
-
-    if (!response.ok) {
-        const errorData = await response.json(); // Assuming error response is JSON
-        throw new Error(errorData.message || `Failed to fetch registered users: ${response.statusText}`);
-    }
-    return response.json();
 }
 
 // --- User-facing Functions ---
+
 export async function submitUserInfo(userInfo: UserInfo): Promise<void> {
-    console.log('Updating user info locally:', userInfo);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    console.log('User info updated locally.');
-    return Promise.resolve();
+    // Simulated delay for UX
+    return new Promise(resolve => setTimeout(resolve, 500));
 }
 
-export async function submitConsultationRequest(request: {
+export async function submitConsultationRequest(requestData: {
     userInfo: UserInfo,
     course: Course
 }): Promise<void> {
-    const { userInfo, course } = request;
+    const { userInfo, course } = requestData;
     const payload = {
-        name: userInfo.name, phone: userInfo.phone, city: userInfo.city,
-        courseOfInterest: course.language, level: course.level, type: course.type,
-        format: course.format, schedule: course.schedule, price: course.price,
+        name: userInfo.name,
+        phone: userInfo.phone,
+        city: userInfo.city,
+        courseOfInterest: course.language,
+        level: course.level,
+        type: course.type,
+        format: course.format,
+        schedule: course.schedule,
+        price: course.price,
         description: `درخواست مشاوره برای دوره: ${course.language} - ${course.level}`,
     };
     
+    // This endpoint might be public or protected depending on backend. 
+    // Assuming public submission doesn't need admin token.
     const response = await fetch(`${API_BASE_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -159,7 +195,7 @@ export async function submitConsultationRequest(request: {
     });
 
     if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`API Error: ${response.status} - ${errorData}`);
+        const errorText = await response.text();
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
     }
 }

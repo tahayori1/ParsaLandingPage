@@ -8,13 +8,14 @@ import UrgencyBanner from './components/UrgencyBanner';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import QuickStats from './components/QuickStats';
-import CourseCatalog from './components/CarInventory'; // Re-using file
+import CourseCatalog from './components/CarInventory';
 
+// Lazy loaded components
 const Testimonials = lazy(() => import('./components/Testimonials'));
 const Benefits = lazy(() => import('./components/Benefits'));
 const CTA = lazy(() => import('./components/CTA'));
 const Footer = lazy(() => import('./components/Footer'));
-const ClassDetailsModal = lazy(() => import('./components/CarModal')); // Re-using file
+const ClassDetailsModal = lazy(() => import('./components/CarModal'));
 const ConsultationModal = lazy(() => import('./components/ConsultationModal'));
 const UserProfileModal = lazy(() => import('./components/UserProfileModal'));
 const UserInfoModal = lazy(() => import('./components/UserInfoModal'));
@@ -27,31 +28,34 @@ const STATIC_PHONE_NUMBERS = ['09173162644', '09013443574', '071-32331829', '071
 const WHATSAPP_NUMBER = '09173162644';
 
 const MainApp: React.FC = () => {
+    // Data State
     const [languages, setLanguages] = useState<Language[]>([]);
     const [allCourses, setAllCourses] = useState<Course[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     
+    // UI State - Main App
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
     const [isConsultationModalOpen, setIsConsultationModalOpen] = useState<boolean>(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
     const [isUserInfoModalOpen, useStateUserInfoModalOpen] = useState<boolean>(false);
-    const [postUserInfoAction, setPostUserInfoAction] = useState<'profile' | null>(null);
+    const [, setPostUserInfoAction] = useState<'profile' | null>(null); // Kept for potential future expansion
 
-    // Admin state
+    // Routing & Auth State
     const [view, setView] = useState(window.location.hash || '#/');
     const [isAdmin, setIsAdmin] = useState(() => !!sessionStorage.getItem('adminAuthToken'));
+
+    // Admin Modal States
     const [isCourseFormModalOpen, setIsCourseFormModalOpen] = useState(false);
     const [editingCourse, setEditingCourse] = useState<Course | null>(null);
     const [isLanguageFormModalOpen, setIsLanguageFormModalOpen] = useState(false);
     const [editingLanguage, setEditingLanguage] = useState<Language | null>(null);
 
-
+    // User Info Persistence
     const [userInfo, setUserInfo] = useState<UserInfo | null>(() => {
         try {
             const storedUserInfo = localStorage.getItem('userInfo');
             return storedUserInfo ? JSON.parse(storedUserInfo) : null;
         } catch (error) {
-            console.error('Failed to parse user info from localStorage', error);
             localStorage.removeItem('userInfo');
             return null;
         }
@@ -63,12 +67,16 @@ const MainApp: React.FC = () => {
         setUserInfo(info);
     }, []);
     
+    // Data Loading
     const loadData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const fetchedCourses = await api.fetchAllCourses();
-            const baseLanguages = await api.fetchAllLanguages();
+            const [fetchedCourses, baseLanguages] = await Promise.all([
+                api.fetchAllCourses(),
+                api.fetchAllLanguages()
+            ]);
             
+            // Merge course count into languages
             const fetchedLanguages = baseLanguages.map(lang => ({
                 ...lang,
                 courseCount: fetchedCourses.filter(c => c.language === lang.name).length
@@ -84,54 +92,64 @@ const MainApp: React.FC = () => {
         }
     }, []);
 
+    // Initial Load
+    useEffect(() => { loadData(); }, [loadData]);
+
+    // Routing Logic
     useEffect(() => {
         const handleRouteChange = () => {
             const currentHash = window.location.hash || '#/';
+            
+            // Security/UX: Close all modals when entering admin area
             if (currentHash.startsWith('#/admin')) {
                 setSelectedCourse(null);
                 setIsConsultationModalOpen(false);
                 setIsProfileModalOpen(false);
                 useStateUserInfoModalOpen(false);
             }
+            
             setView(currentHash);
         };
+
+        // Handle initial route
         handleRouteChange();
         window.addEventListener('hashchange', handleRouteChange);
         return () => window.removeEventListener('hashchange', handleRouteChange);
     }, []);
 
+    // Sync URL with selected course (Deep linking)
+    useEffect(() => {
+        if (allCourses.length === 0) return;
+
+        const hash = window.location.hash;
+        if (hash.startsWith('#/course/')) {
+            const slug = hash.substring(9); // 9 is length of '#/course/'
+            const course = allCourses.find(c => c.slug === slug);
+            if(course) {
+                setSelectedCourse(course);
+                updateSEOMetadataForCourse(course);
+            }
+        } else if (!hash.startsWith('#/admin') && !hash.startsWith('#/language/')) {
+             // Only clear course if we are not in admin or language view
+             // But if we are just navigating back to home or list, clear it.
+             setSelectedCourse(null);
+        }
+    }, [allCourses, view]);
+
     const selectedLanguageNameFromUrl = useMemo(() => {
         if (view.startsWith('#/language/')) {
-            const langSlug = view.substring(11); // Length of '#/language/'
-            const lang = languages.find(l => encodeURIComponent(l.name.replace(/\s/g, '-')) === langSlug);
+            // Extract language name from URL, handle encoded characters
+            const langSlug = decodeURIComponent(view.substring(11)); // Length of '#/language/'
+            // Match slug (hyphenated) back to name (spaced) logic
+            const lang = languages.find(l => l.name.replace(/\s/g, '-') === langSlug);
             return lang ? lang.name : null;
         }
         return null;
     }, [view, languages]);
 
-
-    useEffect(() => {
-        if (allCourses.length === 0) return;
-        const handleHistoryChange = () => {
-            const hash = window.location.hash;
-            if (hash.startsWith('#/course/')) {
-                const slug = hash.substring(8);
-                const course = allCourses.find(c => c.slug === slug);
-                if(course) {
-                    setSelectedCourse(course);
-                    updateSEOMetadataForCourse(course);
-                }
-            } else if (!hash.startsWith('#/admin')) {
-                 setSelectedCourse(null);
-            }
-        };
-        handleHistoryChange();
-        window.addEventListener('popstate', handleHistoryChange);
-        return () => window.removeEventListener('popstate', handleHistoryChange);
-    }, [allCourses]);
-
-    // Admin Handlers
-    const handleAdminLogin = async (username: string, password: string): Promise<boolean | string> => {
+    // --- Admin Handlers ---
+    
+    const handleAdminLogin = useCallback(async (username: string, password: string): Promise<boolean | string> => {
         try {
             const { token } = await api.loginAdmin(username, password);
             if (token) {
@@ -141,18 +159,16 @@ const MainApp: React.FC = () => {
             }
             return 'توکن دریافت نشد.';
         } catch (error) {
-            console.error("Admin login failed:", error);
             return error instanceof Error ? error.message : 'خطای ناشناخته در ورود.';
         }
-    };
+    }, []);
 
-    const handleAdminLogout = () => {
+    const handleAdminLogout = useCallback(() => {
         sessionStorage.removeItem('adminAuthToken');
         setIsAdmin(false);
         window.location.hash = '#/';
-    };
+    }, []);
     
-    // Course Handlers
     const handleSaveCourse = async (courseToSave: Course) => {
         try {
             if (courseToSave.id) {
@@ -164,7 +180,6 @@ const MainApp: React.FC = () => {
             setEditingCourse(null);
             await loadData();
         } catch (error) {
-            console.error("Failed to save course:", error);
             alert("خطا در ذخیره سازی دوره. لطفا دوباره تلاش کنید.");
         }
     };
@@ -175,7 +190,6 @@ const MainApp: React.FC = () => {
                 await api.deleteCourse(courseId);
                 await loadData();
             } catch (error) {
-                 console.error("Failed to delete course:", error);
                  alert("خطا در حذف دوره.");
             }
         }
@@ -191,7 +205,8 @@ const MainApp: React.FC = () => {
         setIsCourseFormModalOpen(true);
     };
 
-    // Language Handlers
+    // --- Language Handlers ---
+    
     const handleSaveLanguage = async (langToSave: Language) => {
          try {
             if (langToSave.id) {
@@ -203,7 +218,6 @@ const MainApp: React.FC = () => {
             setEditingLanguage(null);
             await loadData();
         } catch (error) {
-            console.error("Failed to save language:", error);
             alert("خطا در ذخیره سازی زبان. لطفا دوباره تلاش کنید.");
         }
     };
@@ -214,7 +228,6 @@ const MainApp: React.FC = () => {
                 await api.deleteLanguage(langId);
                 await loadData();
             } catch (error) {
-                 console.error("Failed to delete language:", error);
                  alert("خطا در حذف زبان.");
             }
         }
@@ -230,28 +243,32 @@ const MainApp: React.FC = () => {
         setIsLanguageFormModalOpen(true);
     };
 
+    // --- User Interaction Handlers ---
 
     const handleSelectCourse = useCallback((course: Course) => {
         const newHash = `#/course/${course.slug}`;
-        setSelectedCourse(course);
-        updateSEOMetadataForCourse(course);
         if (window.location.hash !== newHash) {
-             history.pushState({ courseId: course.id }, '', newHash);
+             window.location.hash = newHash;
         }
     }, []);
 
     const handleCloseCourseModal = useCallback(() => {
-        if (window.location.hash.startsWith('#/course/')) {
-            history.back();
+        // If we are on a deep link, go back. If not (e.g. opened from list), just close.
+        // Simplest strategy for this SPA: go back to language list or home.
+        if (window.history.length > 1) {
+             window.history.back();
         } else {
-            setSelectedCourse(null);
+             window.location.hash = '#/';
         }
     }, []);
 
     const handleRequestConsultation = useCallback((course: Course) => {
-        setSelectedCourse(course);
+        // Ensure course is set before opening modal
+        if (!selectedCourse || selectedCourse.id !== course.id) {
+            setSelectedCourse(course);
+        }
         setIsConsultationModalOpen(true); 
-    }, []);
+    }, [selectedCourse]);
 
     const handleCloseConsultation = useCallback(() => {
         setIsConsultationModalOpen(false);
@@ -283,23 +300,30 @@ const MainApp: React.FC = () => {
     }, [onUpdateUserInfo]);
     
     const handleSetSelectedLanguage = useCallback((langName: string) => {
-        window.location.hash = `#/language/${encodeURIComponent(langName.replace(/\s/g, '-'))}`;
+        const slug = langName.replace(/\s/g, '-');
+        window.location.hash = `#/language/${encodeURIComponent(slug)}`;
     }, []);
 
     const handleClearSelectedLanguage = useCallback(() => {
         window.location.hash = '#/';
+        // Scroll to top of courses section smoothly
         setTimeout(() => {
-            document.getElementById('courses')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+            const el = document.getElementById('courses');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 50);
     }, []);
 
     const courseCount = useMemo(() => allCourses.length, [allCourses]);
 
-    useEffect(() => { loadData(); }, [loadData]);
-
     if (isLoading) {
-        return <div className="flex items-center justify-center h-screen bg-parsa-light-bg"><div className="text-xl font-semibold text-parsa-gray-600">درحال بارگذاری اطلاعات...</div></div>;
+        return (
+            <div className="flex items-center justify-center h-screen bg-parsa-light-bg">
+                <div className="text-xl font-semibold text-parsa-gray-600 animate-pulse">درحال بارگذاری اطلاعات...</div>
+            </div>
+        );
     }
+
+    // --- Render Helpers ---
 
     const renderMainApp = () => (
         <>
@@ -317,24 +341,53 @@ const MainApp: React.FC = () => {
                     onSelectCourse={handleSelectCourse} 
                     onRequestConsultation={handleRequestConsultation} 
                 />
-                 <Suspense fallback={<div className="text-center p-12 font-semibold">درحال بارگذاری...</div>}>
+                 <Suspense fallback={<div className="py-12 text-center">درحال بارگذاری...</div>}>
                     <Testimonials />
                     <Benefits />
                     <CTA whatsappNumber={WHATSAPP_NUMBER} />
                 </Suspense>
             </main>
             <Suspense fallback={null}><Footer phoneNumbers={STATIC_PHONE_NUMBERS} /></Suspense>
+            
+            {/* Modals - Only render if NOT in admin view to prevent black screen overlay issues */}
             <Suspense fallback={null}>
-                {selectedCourse && !view.startsWith('#/admin') && <ClassDetailsModal course={selectedCourse} onClose={handleCloseCourseModal} onOpenConsultation={() => handleRequestConsultation(selectedCourse)} />}
-                {isConsultationModalOpen && selectedCourse && !view.startsWith('#/admin') && <ConsultationModal course={selectedCourse} userInfo={userInfo} onClose={handleCloseConsultation} onUpdateAndConfirm={handleUserInfoSubmitAndConsult} />}
-                {isProfileModalOpen && userInfo && !view.startsWith('#/admin') && <UserProfileModal currentUserInfo={userInfo} onClose={handleCloseProfileModal} onUpdate={onUpdateUserInfo} />}
-                {isUserInfoModalOpen && !view.startsWith('#/admin') && <UserInfoModal onSubmit={handleSubmitUserInfoForProfile} onClose={() => { useStateUserInfoModalOpen(false); setPostUserInfoAction(null); }} title="اطلاعات شما" description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." submitText="ثبت و ادامه" />}
+                {!view.startsWith('#/admin') && selectedCourse && (
+                    <ClassDetailsModal 
+                        course={selectedCourse} 
+                        onClose={handleCloseCourseModal} 
+                        onOpenConsultation={() => handleRequestConsultation(selectedCourse)} 
+                    />
+                )}
+                {!view.startsWith('#/admin') && isConsultationModalOpen && selectedCourse && (
+                    <ConsultationModal 
+                        course={selectedCourse} 
+                        userInfo={userInfo} 
+                        onClose={handleCloseConsultation} 
+                        onUpdateAndConfirm={handleUserInfoSubmitAndConsult} 
+                    />
+                )}
+                {!view.startsWith('#/admin') && isProfileModalOpen && userInfo && (
+                    <UserProfileModal 
+                        currentUserInfo={userInfo} 
+                        onClose={handleCloseProfileModal} 
+                        onUpdate={onUpdateUserInfo} 
+                    />
+                )}
+                {!view.startsWith('#/admin') && isUserInfoModalOpen && (
+                    <UserInfoModal 
+                        onSubmit={handleSubmitUserInfoForProfile} 
+                        onClose={() => { useStateUserInfoModalOpen(false); setPostUserInfoAction(null); }} 
+                        title="اطلاعات شما" 
+                        description="برای مشاهده پروفایل، لطفا اطلاعات خود را وارد کنید." 
+                        submitText="ثبت و ادامه" 
+                    />
+                )}
             </Suspense>
         </>
     );
 
     const renderAdmin = () => (
-         <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading Admin...</div>}>
+         <Suspense fallback={<div className="flex items-center justify-center h-screen">در حال بارگذاری پنل مدیریت...</div>}>
             {!isAdmin ? (
                 <AdminLogin onLogin={handleAdminLogin} />
             ) : (
@@ -355,11 +408,15 @@ const MainApp: React.FC = () => {
                             initialData={editingCourse} 
                             onSave={handleSaveCourse} 
                             onClose={() => setIsCourseFormModalOpen(false)} 
-                            availableLanguages={languages} // Pass available languages
+                            availableLanguages={languages}
                         />
                     )}
                     {isLanguageFormModalOpen && (
-                        <LanguageFormModal initialData={editingLanguage} onSave={handleSaveLanguage} onClose={() => setIsLanguageFormModalOpen(false)} />
+                        <LanguageFormModal 
+                            initialData={editingLanguage} 
+                            onSave={handleSaveLanguage} 
+                            onClose={() => setIsLanguageFormModalOpen(false)} 
+                        />
                     )}
                 </>
             )}

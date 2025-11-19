@@ -1,8 +1,8 @@
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Course, Language } from '../types';
-import ClassCard from './CarCard'; // Re-using file, component renamed inside
-import LanguageCard from './CarModelCard'; // Re-using file, component renamed inside
+import ClassCard from './CarCard';
+import LanguageCard from './CarModelCard';
 import { updateSEOMetadataForLanguage, resetSEOMetadata } from '../utils/helpers';
 
 interface CourseCatalogProps {
@@ -26,6 +26,7 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({
 }) => {
     const [filters, setFilters] = useState({ type: 'all', format: 'all' });
 
+    // SEO & Metadata Update
     useEffect(() => {
         if (selectedLanguage) {
             const selectedLangData = languages.find(l => l.name === selectedLanguage);
@@ -37,23 +38,28 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({
         }
     }, [selectedLanguage, languages]);
     
+    // Reset filters when language changes
     useEffect(() => {
-        // Reset filters when language changes
         setFilters({ type: 'all', format: 'all' });
     }, [selectedLanguage]);
 
     const filteredCourses = useMemo(() => {
         if (!selectedLanguage) return [];
-        return allCourses
-            .filter(c => c.language === selectedLanguage)
-            .filter(c => filters.type === 'all' || c.type === filters.type)
-            .filter(c => filters.format === 'all' || c.format === filters.format);
+        
+        return allCourses.filter(course => {
+            const matchLanguage = course.language === selectedLanguage;
+            const matchType = filters.type === 'all' || course.type === filters.type;
+            const matchFormat = filters.format === 'all' || course.format === filters.format;
+            
+            return matchLanguage && matchType && matchFormat;
+        });
     }, [selectedLanguage, allCourses, filters]);
     
     const handleFilterChange = (type: 'type' | 'format', value: string) => {
         setFilters(prev => ({ ...prev, [type]: value }));
     };
 
+    // Render Language Selection View
     if (!selectedLanguage) {
         return (
             <section id="courses" className="py-16">
@@ -64,7 +70,7 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                         {languages.map(lang => (
-                            <LanguageCard key={lang.name} language={lang} onSelectLanguage={onSelectLanguage} />
+                            <LanguageCard key={lang.id || lang.name} language={lang} onSelectLanguage={onSelectLanguage} />
                         ))}
                     </div>
                 </div>
@@ -72,6 +78,7 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({
         );
     }
 
+    // Render Course List View
     return (
         <section id="courses" className="py-16 bg-white">
             <div className="container mx-auto px-4">
@@ -80,25 +87,43 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({
                     <p className="text-base md:text-lg text-parsa-gray-600 max-w-2xl mx-auto">از میان کلاس‌های متنوع، بهترین گزینه را برای یادگیری انتخاب کنید.</p>
                 </div>
                 
+                {/* Filters */}
                 <div className="mb-8 p-4 bg-parsa-gray-50 rounded-lg flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
                     <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-parsa-gray-700">نوع کلاس:</span>
                         <div className="flex gap-2">
-                             <button onClick={() => handleFilterChange('type', 'all')} className={`px-3 py-1 text-sm rounded-full ${filters.type === 'all' ? 'bg-parsa-orange-500 text-white' : 'bg-white text-parsa-gray-600'}`}>همه</button>
-                             <button onClick={() => handleFilterChange('type', 'گروهی')} className={`px-3 py-1 text-sm rounded-full ${filters.type === 'گروهی' ? 'bg-parsa-orange-500 text-white' : 'bg-white text-parsa-gray-600'}`}>گروهی</button>
-                             <button onClick={() => handleFilterChange('type', 'خصوصی')} className={`px-3 py-1 text-sm rounded-full ${filters.type === 'خصوصی' ? 'bg-parsa-orange-500 text-white' : 'bg-white text-parsa-gray-600'}`}>خصوصی</button>
+                             {['all', 'گروهی', 'خصوصی'].map(type => (
+                                 <button 
+                                    key={type}
+                                    onClick={() => handleFilterChange('type', type)} 
+                                    className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                                        filters.type === type ? 'bg-parsa-orange-500 text-white' : 'bg-white text-parsa-gray-600 hover:bg-gray-100'
+                                    }`}
+                                 >
+                                    {type === 'all' ? 'همه' : type}
+                                 </button>
+                             ))}
                         </div>
                     </div>
                      <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-parsa-gray-700">فرمت کلاس:</span>
                         <div className="flex gap-2">
-                             <button onClick={() => handleFilterChange('format', 'all')} className={`px-3 py-1 text-sm rounded-full ${filters.format === 'all' ? 'bg-parsa-orange-500 text-white' : 'bg-white text-parsa-gray-600'}`}>همه</button>
-                             <button onClick={() => handleFilterChange('format', 'حضوری')} className={`px-3 py-1 text-sm rounded-full ${filters.format === 'حضوری' ? 'bg-parsa-orange-500 text-white' : 'bg-white text-parsa-gray-600'}`}>حضوری</button>
-                             <button onClick={() => handleFilterChange('format', 'آنلاین')} className={`px-3 py-1 text-sm rounded-full ${filters.format === 'آنلاین' ? 'bg-parsa-orange-500 text-white' : 'bg-white text-parsa-gray-600'}`}>آنلاین</button>
+                            {['all', 'حضوری', 'آنلاین'].map(format => (
+                                 <button 
+                                    key={format}
+                                    onClick={() => handleFilterChange('format', format)} 
+                                    className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                                        filters.format === format ? 'bg-parsa-orange-500 text-white' : 'bg-white text-parsa-gray-600 hover:bg-gray-100'
+                                    }`}
+                                 >
+                                    {format === 'all' ? 'همه' : format}
+                                 </button>
+                             ))}
                         </div>
                     </div>
                 </div>
 
+                {/* Navigation */}
                 <div className="text-center mb-8">
                      <button onClick={onGoBack} className="text-parsa-orange-600 hover:text-parsa-orange-800 hover:underline inline-flex items-center gap-2 transition-colors font-medium">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 rtl:-scale-x-100" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
@@ -106,10 +131,16 @@ const CourseCatalog: React.FC<CourseCatalogProps> = ({
                     </button>
                 </div>
 
+                {/* Results */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
                     {filteredCourses.length > 0 ? (
                         filteredCourses.map(course => (
-                            <ClassCard key={course.id} course={course} onSelectCourse={onSelectCourse} onRequestConsultation={onRequestConsultation} />
+                            <ClassCard 
+                                key={course.id} 
+                                course={course} 
+                                onSelectCourse={onSelectCourse} 
+                                onRequestConsultation={onRequestConsultation} 
+                            />
                         ))
                     ) : (
                         <div className="col-span-full text-center py-12">
