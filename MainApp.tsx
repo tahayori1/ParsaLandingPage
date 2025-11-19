@@ -106,6 +106,8 @@ const MainApp: React.FC = () => {
                 setIsConsultationModalOpen(false);
                 setIsProfileModalOpen(false);
                 useStateUserInfoModalOpen(false);
+                // Safety: Force reset overflow to ensure scrolling is enabled and no modal artifacts remain
+                document.body.style.overflow = '';
             }
             
             setView(currentHash);
@@ -387,40 +389,42 @@ const MainApp: React.FC = () => {
     );
 
     const renderAdmin = () => (
-         <Suspense fallback={<div className="flex items-center justify-center h-screen">در حال بارگذاری پنل مدیریت...</div>}>
-            {!isAdmin ? (
-                <AdminLogin onLogin={handleAdminLogin} />
-            ) : (
-                <>
-                    <AdminPanel 
-                        courses={allCourses}
-                        languages={languages}
-                        onAddCourse={handleAddNewCourse}
-                        onEditCourse={handleEditCourse}
-                        onDeleteCourse={handleDeleteCourse}
-                        onAddLanguage={handleAddNewLanguage}
-                        onEditLanguage={handleEditLanguage}
-                        onDeleteLanguage={handleDeleteLanguage}
-                        onLogout={handleAdminLogout}
-                    />
-                    {isCourseFormModalOpen && (
-                        <CourseFormModal 
-                            initialData={editingCourse} 
-                            onSave={handleSaveCourse} 
-                            onClose={() => setIsCourseFormModalOpen(false)} 
-                            availableLanguages={languages}
+        <div className="min-h-screen bg-parsa-gray-50 w-full relative z-0 text-parsa-gray-800">
+             <Suspense fallback={<div className="flex items-center justify-center h-screen text-parsa-gray-600">در حال بارگذاری پنل مدیریت...</div>}>
+                {!isAdmin ? (
+                    <AdminLogin onLogin={handleAdminLogin} />
+                ) : (
+                    <>
+                        <AdminPanel 
+                            courses={allCourses}
+                            languages={languages}
+                            onAddCourse={handleAddNewCourse}
+                            onEditCourse={handleEditCourse}
+                            onDeleteCourse={handleDeleteCourse}
+                            onAddLanguage={handleAddNewLanguage}
+                            onEditLanguage={handleEditLanguage}
+                            onDeleteLanguage={handleDeleteLanguage}
+                            onLogout={handleAdminLogout}
                         />
-                    )}
-                    {isLanguageFormModalOpen && (
-                        <LanguageFormModal 
-                            initialData={editingLanguage} 
-                            onSave={handleSaveLanguage} 
-                            onClose={() => setIsLanguageFormModalOpen(false)} 
-                        />
-                    )}
-                </>
-            )}
-        </Suspense>
+                        {isCourseFormModalOpen && (
+                            <CourseFormModal 
+                                initialData={editingCourse} 
+                                onSave={handleSaveCourse} 
+                                onClose={() => setIsCourseFormModalOpen(false)} 
+                                availableLanguages={languages}
+                            />
+                        )}
+                        {isLanguageFormModalOpen && (
+                            <LanguageFormModal 
+                                initialData={editingLanguage} 
+                                onSave={handleSaveLanguage} 
+                                onClose={() => setIsLanguageFormModalOpen(false)} 
+                            />
+                        )}
+                    </>
+                )}
+            </Suspense>
+        </div>
     );
 
     return view.startsWith('#/admin') ? renderAdmin() : renderMainApp();
