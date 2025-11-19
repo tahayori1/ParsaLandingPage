@@ -125,7 +125,8 @@ const MainApp: React.FC = () => {
 
         const hash = window.location.hash;
         if (hash.startsWith('#/course/')) {
-            const slug = hash.substring(9); // 9 is length of '#/course/'
+            // Decode URI component to handle Persian characters correctly
+            const slug = decodeURIComponent(hash.substring(9)); // 9 is length of '#/course/'
             const course = allCourses.find(c => c.slug === slug);
             if(course) {
                 setSelectedCourse(course);
