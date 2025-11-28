@@ -1,9 +1,11 @@
+// components/AdminPanel.tsx
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Course, Language, RegisteredUser, ClubMember } from '../types';
 import { formatPrice, formatPhoneNumber } from '../utils/helpers';
 import * as api from '../utils/api';
 import ClubMemberFormModal from './ClubMemberFormModal';
+import BulkEditCourseModal from './BulkEditCourseModal';
 
 interface AdminPanelProps {
     courses: Course[];
@@ -27,6 +29,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<ActiveTab>('courses');
     
+    // Selection States
+    const [selectedCourseIds, setSelectedCourseIds] = useState<Set<number>>(new Set());
+    const [selectedLanguageIds, setSelectedLanguageIds] = useState<Set<number>>(new Set());
+    
+    // Bulk Edit Modal State
+    const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
+
     // Registered Users State
     const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([]);
     const [isLoadingUsers, setIsLoadingUsers] = useState(false);
@@ -75,9 +84,116 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
         }
     }, [activeTab, loadRegisteredUsers, loadClubMembers]);
 
+    // Clear selections when tab changes
+    useEffect(() => {
+        setSelectedCourseIds(new Set());
+        setSelectedLanguageIds(new Set());
+    }, [activeTab]);
+
     const handleGoToMainSite = () => {
         window.location.hash = '#/'; // Navigate to homepage
         onLogout(); // Log out from admin session
+    };
+
+    // --- Bulk Selection Logic ---
+
+    const toggleSelectCourse = (id: number) => {
+        const newSelected = new Set(selectedCourseIds);
+        if (newSelected.has(id)) newSelected.delete(id);
+        else newSelected.add(id);
+        setSelectedCourseIds(newSelected);
+    };
+
+    const toggleSelectAllCourses = () => {
+        if (selectedCourseIds.size === courses.length) {
+            setSelectedCourseIds(new Set());
+        } else {
+            setSelectedCourseIds(new Set(courses.map(c => c.id!).filter(Boolean)));
+        }
+    };
+
+    const toggleSelectLanguage = (id: number) => {
+        const newSelected = new Set(selectedLanguageIds);
+        if (newSelected.has(id)) newSelected.delete(id);
+        else newSelected.add(id);
+        setSelectedLanguageIds(newSelected);
+    };
+
+    const toggleSelectAllLanguages = () => {
+        if (selectedLanguageIds.size === languages.length) {
+            setSelectedLanguageIds(new Set());
+        } else {
+            setSelectedLanguageIds(new Set(languages.map(l => l.id!).filter(Boolean)));
+        }
+    };
+
+    // --- Bulk Operations ---
+
+    const handleBulkDeleteCourses = async () => {
+        if (window.confirm(`آیا از حذف ${selectedCourseIds.size} دوره انتخاب شده اطمینان دارید؟`)) {
+            try {
+                // Since the API might typically handle one by one, we loop.
+                // Optimally the API would support bulk delete.
+                await Promise.all(Array.from(selectedCourseIds).map(id => api.deleteCourse(id)));
+                // Trigger refresh by calling onDeleteCourse with a dummy or forcing a reload in parent
+                // Ideally, AdminPanel should have a reload prop or the parent handles data sync.
+                // Here we essentially rely on the parent's `loadData` which is triggered by individual calls usually,
+                // but since we do multiple, we need to ensure the parent refreshes.
+                // The prompt architecture relies on props for CRUD. We'll simulate by clearing selection
+                // and expecting the user to refresh or the parent to eventually sync. 
+                // BETTER: We can't easily trigger parent reload from here without a prop.
+                // Assuming `onDeleteCourse` triggers a reload in parent:
+                // We'll call it once to trigger reload, but that's hacky.
+                // Let's reload page logic or just accept that the parent needs a "Refresh" capability.
+                // Actually, MainApp's `handleDeleteCourse` calls `loadData`. 
+                // We will manually trigger a reload via a hack or just alert.
+                // For this implementation, let's process them and then call the single delete handler for the last one 
+                // to trigger the refresh in MainApp, or simply refresh the page.
+                
+                // Hack to trigger refresh in MainApp:
+                // We will call the delete prop for one item, which triggers `loadData`.
+                // But we already deleted them.
+                
+                // Correct approach given constraints: We can't easily trigger `loadData` in MainApp from here 
+                // without passing a new prop `onRefresh`. 
+                // However, `onDeleteCourse` in MainApp does: `await api.deleteCourse(id); await loadData();`
+                // So if we call `onDeleteCourse` inside the loop, it will trigger multiple reloads.
+                // Let's just do it manually here and hope for the best, or assume the user refreshes.
+                
+                window.location.reload(); // Simplest way to sync state for bulk ops without refactoring MainApp
+            } catch (error) {
+                alert("خطا در حذف گروهی.");
+            }
+        }
+    };
+
+    const handleBulkDeleteLanguages = async () => {
+         if (window.confirm(`آیا از حذف ${selectedLanguageIds.size} زبان انتخاب شده اطمینان دارید؟`)) {
+            try {
+                await Promise.all(Array.from(selectedLanguageIds).map(id => api.deleteLanguage(id)));
+                window.location.reload(); 
+            } catch (error) {
+                alert("خطا در حذف گروهی.");
+            }
+        }
+    };
+
+    const handleBulkEditCourses = async (updates: { language?: string; type?: string; format?: string; status?: string }) => {
+        try {
+            const promises = Array.from(selectedCourseIds).map(id => {
+                const course = courses.find(c => c.id === id);
+                if (!course) return Promise.resolve();
+                
+                const updatedCourse = { ...course, ...updates } as Course;
+                return api.updateCourse(updatedCourse);
+            });
+            
+            await Promise.all(promises);
+            setIsBulkEditModalOpen(false);
+            window.location.reload();
+        } catch (error) {
+            alert("خطا در ویرایش گروهی.");
+        }
     };
 
     // Club Member Handlers
@@ -164,7 +280,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 {/* Content - Courses */}
                 {activeTab === 'courses' && (
                     <div className="animate-fade-in">
-                        <div className="mb-6 text-left">
+                        <div className="mb-6 flex flex-wrap gap-3 items-center justify-between">
                             <button
                                 onClick={onAddCourse}
                                 className="bg-parsa-orange-500 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-parsa-orange-600 transition-colors shadow-sm inline-flex items-center gap-2"
@@ -172,11 +288,40 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
                                 افزودن دوره جدید
                             </button>
+
+                            {/* Bulk Actions */}
+                            {selectedCourseIds.size > 0 && (
+                                <div className="flex gap-2 bg-parsa-brown-100 p-2 rounded-lg animate-fade-in">
+                                    <span className="flex items-center px-3 text-sm font-medium text-parsa-brown-800 border-l border-parsa-brown-300 pl-3 ml-1">
+                                        {selectedCourseIds.size} مورد انتخاب شده
+                                    </span>
+                                    <button 
+                                        onClick={() => setIsBulkEditModalOpen(true)}
+                                        className="bg-white text-parsa-orange-600 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-orange-50 border border-parsa-orange-200 transition-colors"
+                                    >
+                                        ویرایش گروهی
+                                    </button>
+                                    <button 
+                                        onClick={handleBulkDeleteCourses}
+                                        className="bg-white text-red-600 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-50 border border-red-200 transition-colors"
+                                    >
+                                        حذف گروهی
+                                    </button>
+                                </div>
+                            )}
                         </div>
                         <div className="bg-white rounded-xl shadow-md overflow-x-auto">
                              <table className="w-full text-sm text-right text-parsa-gray-600">
                                 <thead className="text-xs text-parsa-gray-700 uppercase bg-parsa-gray-100">
                                     <tr>
+                                        <th className="px-6 py-3 w-10">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={courses.length > 0 && selectedCourseIds.size === courses.length}
+                                                onChange={toggleSelectAllCourses}
+                                                className="rounded border-gray-300 text-parsa-orange-600 focus:ring-parsa-orange-500"
+                                            />
+                                        </th>
                                         <th className="px-6 py-3">زبان</th>
                                         <th className="px-6 py-3">سطح</th>
                                         <th className="px-6 py-3">نوع/فرمت</th>
@@ -187,10 +332,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                 </thead>
                                 <tbody>
                                     {courses.length === 0 ? (
-                                        <tr><td colSpan={6} className="text-center py-8 text-parsa-gray-500">دوره ای یافت نشد. برای شروع یک دوره اضافه کنید.</td></tr>
+                                        <tr><td colSpan={7} className="text-center py-8 text-parsa-gray-500">دوره ای یافت نشد. برای شروع یک دوره اضافه کنید.</td></tr>
                                     ) : (
                                         courses.map(course => (
-                                            <tr key={course.id} className="bg-white border-b hover:bg-parsa-gray-50">
+                                            <tr key={course.id} className={`bg-white border-b hover:bg-parsa-gray-50 ${selectedCourseIds.has(course.id!) ? 'bg-orange-50' : ''}`}>
+                                                <td className="px-6 py-4">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={selectedCourseIds.has(course.id!)}
+                                                        onChange={() => toggleSelectCourse(course.id!)}
+                                                        className="rounded border-gray-300 text-parsa-orange-600 focus:ring-parsa-orange-500"
+                                                    />
+                                                </td>
                                                 <td className="px-6 py-4 font-medium text-parsa-brown-900 whitespace-nowrap">{course.language}</td>
                                                 <td className="px-6 py-4">{course.level}</td>
                                                 <td className="px-6 py-4">{course.type} / {course.format}</td>
@@ -216,7 +369,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                 {/* Content - Languages */}
                 {activeTab === 'languages' && (
                     <div className="animate-fade-in">
-                         <div className="mb-6 text-left">
+                         <div className="mb-6 flex flex-wrap gap-3 items-center justify-between">
                             <button
                                 onClick={onAddLanguage}
                                 className="bg-parsa-orange-500 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-parsa-orange-600 transition-colors shadow-sm inline-flex items-center gap-2"
@@ -224,11 +377,34 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" /></svg>
                                 افزودن زبان جدید
                             </button>
+
+                             {/* Bulk Actions */}
+                             {selectedLanguageIds.size > 0 && (
+                                <div className="flex gap-2 bg-parsa-brown-100 p-2 rounded-lg animate-fade-in">
+                                    <span className="flex items-center px-3 text-sm font-medium text-parsa-brown-800 border-l border-parsa-brown-300 pl-3 ml-1">
+                                        {selectedLanguageIds.size} مورد انتخاب شده
+                                    </span>
+                                    <button 
+                                        onClick={handleBulkDeleteLanguages}
+                                        className="bg-white text-red-600 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-50 border border-red-200 transition-colors"
+                                    >
+                                        حذف گروهی
+                                    </button>
+                                </div>
+                            )}
                         </div>
                         <div className="bg-white rounded-xl shadow-md overflow-x-auto">
                             <table className="w-full text-sm text-right text-parsa-gray-600">
                                 <thead className="text-xs text-parsa-gray-700 uppercase bg-parsa-gray-100">
                                     <tr>
+                                        <th className="px-6 py-3 w-10">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={languages.length > 0 && selectedLanguageIds.size === languages.length}
+                                                onChange={toggleSelectAllLanguages}
+                                                className="rounded border-gray-300 text-parsa-orange-600 focus:ring-parsa-orange-500"
+                                            />
+                                        </th>
                                         <th className="px-6 py-3">نام زبان</th>
                                         <th className="px-6 py-3">توضیحات</th>
                                         <th className="px-6 py-3 text-center">عملیات</th>
@@ -236,10 +412,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                                 </thead>
                                 <tbody>
                                     {languages.length === 0 ? (
-                                        <tr><td colSpan={3} className="text-center py-8 text-parsa-gray-500">زبانی یافت نشد.</td></tr>
+                                        <tr><td colSpan={4} className="text-center py-8 text-parsa-gray-500">زبانی یافت نشد.</td></tr>
                                     ) : (
                                         languages.map(lang => (
-                                            <tr key={lang.id} className="bg-white border-b hover:bg-parsa-gray-50">
+                                            <tr key={lang.id} className={`bg-white border-b hover:bg-parsa-gray-50 ${selectedLanguageIds.has(lang.id!) ? 'bg-orange-50' : ''}`}>
+                                                <td className="px-6 py-4">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={selectedLanguageIds.has(lang.id!)}
+                                                        onChange={() => toggleSelectLanguage(lang.id!)}
+                                                        className="rounded border-gray-300 text-parsa-orange-600 focus:ring-parsa-orange-500"
+                                                    />
+                                                </td>
                                                 <td className="px-6 py-4 font-medium text-parsa-brown-900">{lang.name}</td>
                                                 <td className="px-6 py-4">{lang.description}</td>
                                                 <td className="px-6 py-4 text-center space-x-2 space-x-reverse">
@@ -399,6 +583,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
                             />
                         )}
                     </div>
+                )}
+
+                {/* Bulk Edit Modal */}
+                {isBulkEditModalOpen && (
+                    <BulkEditCourseModal 
+                        count={selectedCourseIds.size}
+                        languages={languages}
+                        onSave={handleBulkEditCourses}
+                        onClose={() => setIsBulkEditModalOpen(false)}
+                    />
                 )}
             </div>
         </div>
