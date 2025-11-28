@@ -11,11 +11,11 @@ type RequestOptions = RequestInit & {
     responseType?: 'json' | 'text' | 'void';
 };
 
-interface LoginResponse {
+export interface LoginResponse {
     token: string;
 }
 
-interface ClubRegistrationData {
+export interface ClubRegistrationData {
     first_name: string;
     last_name: string;
     mobile: string;
@@ -95,7 +95,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
             return text as unknown as T;
         }
 
-        // Default to JSON, but fallback to text if Content-Type isn't JSON (like club/verify sometimes)
+        // Default to JSON, but fallback to text if Content-Type isn't JSON
         const contentType = response.headers.get("content-type");
         if (contentType && !contentType.includes("application/json")) {
              const text = await response.text();
@@ -115,7 +115,6 @@ export async function loginAdmin(username: string, password: string): Promise<Lo
     const hashedPassword = await hashPassword(password);
     
     // The login endpoint might return an object OR an array based on previous context.
-    // We request it as 'unknown' first to validate the shape.
     const data = await request<unknown>('/login', {
         method: 'POST',
         skipAuth: true,
@@ -141,7 +140,6 @@ export async function fetchAllCourses(): Promise<Course[]> {
     const coursesData = await request<Course[]>('/courses', { skipAuth: true });
     return coursesData.map(course => ({
         ...course,
-        // Generate a client-side slug for routing
         slug: `${course.language}-${course.level}-${course.id}`.replace(/\s+/g, '-')
     }));
 }
@@ -226,7 +224,7 @@ export async function verifyClubCode(mobile: string, code: string): Promise<stri
     return request<string>('/club/verify', {
         method: 'POST',
         skipAuth: true,
-        responseType: 'text', // Explicitly expect text response
+        responseType: 'text',
         body: JSON.stringify({ mobile, code }),
     });
 }
@@ -263,7 +261,6 @@ export async function deleteClubMember(memberId: number): Promise<void> {
 // --- User-facing Interaction Functions ---
 
 export async function submitUserInfo(userInfo: UserInfo): Promise<void> {
-    // Simulated local delay for UX purposes
     return new Promise(resolve => setTimeout(resolve, 500));
 }
 
@@ -285,9 +282,6 @@ export async function submitConsultationRequest(requestData: {
         description: `درخواست مشاوره برای دوره: ${course.language} - ${course.level}`,
     };
     
-    // Note: This uses the main register endpoint, not the club one.
-    // We assume this endpoint returns text or JSON, handle appropriately via generic request if needed.
-    // But for now, keeping consistent with previous implementation logic via request wrapper.
     await request<void>('/register', {
         method: 'POST',
         skipAuth: true,

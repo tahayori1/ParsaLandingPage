@@ -3,7 +3,6 @@ import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from
 import { Course, UserInfo, Language } from './types';
 import { updateSEOMetadataForCourse } from './utils/helpers';
 import * as api from './utils/api';
-import UrgencyBanner from './components/UrgencyBanner';
 
 import Header from './components/Header';
 import Hero from './components/Hero';
@@ -330,7 +329,6 @@ const MainApp: React.FC = () => {
 
     const renderMainApp = () => (
         <>
-            <UrgencyBanner />
             <Header 
                 courseCount={courseCount} 
                 onOpenProfile={handleOpenProfileModal}
